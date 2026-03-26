@@ -1,0 +1,180 @@
+# Static Site Generation and Preview
+
+SSG's core value (pre-built HTML served without runtime computation) directly conflicts with Live Preview's need for draft-aware, session-scoped content. Static files can't show drafts. The solution: framework-level preview modes that temporarily switch from static to dynamic rendering.
+
+## The Fundamental Conflict
+
+At build time, your generator fetches published content and renders HTML files. These files are deployed to a CDN. No server runs, no API calls fire per request. Live Preview needs runtime rendering of draft content — rebuilding and redeploying on every keystroke isn't practical.
+
+## The Solution: Preview Mode
+
+When preview mode is active, static files are bypassed and requests are handled dynamically (like SSR), fetching from the Preview API per request. When inactive, static files serve normally with no performance impact.
+
+**Conceptually, SSG preview is SSR with guardrails.**
+
+| Aspect | Production (SSG) | Preview Mode |
+|--------|------------------|--------------|
+| Rendering | Static files | Dynamic (SSR) |
+| Content source | Built-in content | Preview API |
+| Caching | Full CDN cache | No caching |
+| Hash handling | Not applicable | Per-request |
+
+![SSG production vs preview mode](./diagrams/ssg-preview-mode.svg)
+
+## Framework Preview Modes
+
+### Next.js (App Router with Draft Mode)
+
+```javascript
+// app/api/draft/route.js
+import { draftMode } from 'next/headers';
+
+export async function GET(request) {
+  const { searchParams } = new URL(request.url);
+  const secret = searchParams.get('secret');
+  const slug = searchParams.get('slug');
+
+  if (secret !== process.env.PREVIEW_SECRET) {
+    return new Response('Invalid token', { status: 401 });
+  }
+
+  draftMode().enable();
+
+  return new Response(null, {
+    status: 307,
+    headers: { Location: `/${slug}` }
+  });
+}
+
+// app/[slug]/page.js
+import { draftMode } from 'next/headers';
+
+export default async function Page({ params }) {
+  const { isEnabled } = draftMode();
+
+  const data = isEnabled
+    ? await fetchDraftContent(params.slug)
+    : await fetchPublishedContent(params.slug);
+
+  return <PageContent data={data} />;
+}
+
+export async function generateStaticParams() {
+  const pages = await fetchAllPages();
+  return pages.map(page => ({ slug: page.slug }));
+}
+```
+
+### Next.js (Pages Router with Preview Mode)
+
+```javascript
+// pages/api/preview.js
+export default function handler(req, res) {
+  const { secret, slug } = req.query;
+
+  if (secret !== process.env.PREVIEW_SECRET) {
+    return res.status(401).json({ message: 'Invalid token' });
+  }
+
+  res.setPreviewData({});
+  res.redirect(`/${slug}`);
+}
+
+// pages/[slug].js
+export async function getStaticProps({ params, preview }) {
+  const data = preview
+    ? await fetchDraftContent(params.slug)
+    : await fetchPublishedContent(params.slug);
+
+  return {
+    props: { data },
+    revalidate: preview ? false : 60
+  };
+}
+
+export async function getStaticPaths() {
+  const pages = await fetchAllPages();
+  return {
+    paths: pages.map(page => ({ params: { slug: page.slug } })),
+    fallback: 'blocking'
+  };
+}
+```
+
+### Astro (Hybrid Rendering)
+
+Astro supports per-route SSR, making it straightforward:
+
+```javascript
+// astro.config.mjs
+export default defineConfig({
+  output: 'hybrid',  // Mostly static, some SSR
+});
+
+// src/pages/[slug].astro
+export const prerender = false;  // This page uses SSR for preview
+
+const { slug } = Astro.params;
+const livePreviewHash = Astro.url.searchParams.get('live_preview');
+
+const data = livePreviewHash
+  ? await fetchDraftContent(slug, livePreviewHash)
+  : await fetchPublishedContent(slug);
+```
+
+## The Common Mistake: Client-Side Patching
+
+Don't try to "patch" static content with client-side refetching:
+
+```javascript
+// DON'T DO THIS
+export async function getStaticProps({ params }) {
+  const data = await fetchPublishedContent(params.slug);
+  return { props: { data } };
+}
+
+function Page({ data }) {
+  const [content, setContent] = useState(data);
+
+  useEffect(() => {
+    if (isPreviewMode()) {
+      fetchDraftContent().then(setContent);  // Causes hydration mismatch + flicker
+    }
+  }, []);
+
+  return <Content data={content} />;
+}
+```
+
+This fails because:
+1. **Hydration mismatch**: Server HTML has published content; client renders draft content
+2. **Layout flicker**: Published content flashes before draft content appears
+3. **Inconsistent state**: Some content updates, some doesn't
+
+**If you use SSG, accept that preview means temporarily leaving SSG.** Don't patch static content dynamically.
+
+## Integrating with Contentstack Live Preview
+
+1. **Create a preview API route** that enables preview mode and redirects
+2. **Configure your stack's Live Preview Base URL** to point to your preview endpoint
+3. **Initialize the SDK client-side** with `ssr: true`
+4. **In preview mode**, fetch from Preview API with the hash
+
+```javascript
+// Stack Settings > Live Preview
+// Base URL: https://your-site.com/api/preview?slug={{entry.url}}
+
+// Flow:
+// 1. CMS constructs URL: https://your-site.com/api/preview?slug=/about
+// 2. Your preview endpoint enables preview mode
+// 3. Redirects to /about with preview cookie set
+// 4. Page renders dynamically with draft content
+```
+
+## A Note on Contentstack's Official SSG Guidance
+
+Contentstack's documentation states that SSG sites run Live Preview in CSR mode (`ssr: false`), fetching content dynamically in the browser rather than triggering iframe reloads.
+
+The full picture: your framework's preview mode bypasses static files and renders dynamically. The Live Preview SDK runs in CSR mode within that dynamic context, fetching draft content and re-rendering in place. The framework handles "escape from static" and the SDK handles the "fetch draft content" loop.
+
+If your SSG framework lacks a preview mode, you can run the SDK in CSR mode and fetch draft content client-side on top of the static page. This works but causes the hydration mismatch and flicker described above — use it as a fallback, not a primary strategy.

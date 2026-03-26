@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" role="img" aria-label="Nested edit tag paths">
+  <defs>
+    <style>
+      .title { font: 600 20px/1.2 "Helvetica Neue", Arial, sans-serif; fill: #111827; }
+      .label { font: 600 14px/1.2 "Helvetica Neue", Arial, sans-serif; fill: #111827; }
+      .text  { font: 12.5px/1.3 "Helvetica Neue", Arial, sans-serif; fill: #111827; }
+      .box   { fill: #f9fafb; stroke: #d1d5db; stroke-width: 1.5; rx: 10; }
+      .line  { stroke: #111827; stroke-width: 2; }
+    </style>
+  </defs>
+  <rect x="0" y="0" width="960" height="560" fill="#ffffff" />
+  <text x="40" y="36" class="title">Edit Tag Paths for Nested Blocks</text>
+
+  <rect x="60" y="100" width="360" height="360" class="box" />
+  <text x="240" y="130" text-anchor="middle" class="label">Content Model</text>
+  <text x="80" y="170" class="text">page_components[0].hero.headline</text>
+  <text x="80" y="195" class="text">page_components[1].features.items[0].title</text>
+  <text x="80" y="220" class="text">page_components[1].features.items[1].title</text>
+
+  <rect x="520" y="140" width="380" height="280" class="box" />
+  <text x="710" y="170" text-anchor="middle" class="label">Edit Tags</text>
+  <text x="540" y="210" class="text">page.{uid}.en-us.page_components.0.hero.headline</text>
+  <text x="540" y="235" class="text">page.{uid}.en-us.page_components.1.features.items.0.title</text>
+  <text x="540" y="260" class="text">page.{uid}.en-us.page_components.1.features.items.1.title</text>
+
+  <line x1="420" y1="210" x2="520" y2="210" class="line" />
+  <line x1="420" y1="235" x2="520" y2="235" class="line" />
+  <line x1="420" y1="260" x2="520" y2="260" class="line" />
+</svg>

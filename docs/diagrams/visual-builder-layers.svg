@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" role="img" aria-label="Visual Builder layers">
+  <defs>
+    <style>
+      .title { font: 600 20px/1.2 "Helvetica Neue", Arial, sans-serif; fill: #111827; }
+      .label { font: 600 14px/1.2 "Helvetica Neue", Arial, sans-serif; fill: #111827; }
+      .text  { font: 12.5px/1.3 "Helvetica Neue", Arial, sans-serif; fill: #111827; }
+      .box   { fill: #f9fafb; stroke: #d1d5db; stroke-width: 1.5; rx: 10; }
+    </style>
+  </defs>
+  <rect x="0" y="0" width="960" height="560" fill="#ffffff" />
+  <text x="40" y="36" class="title">Visual Builder on Top of Live Preview</text>
+
+  <rect x="180" y="120" width="600" height="90" class="box" />
+  <text x="480" y="160" text-anchor="middle" class="label">Visual Builder Layer</text>
+  <text x="220" y="185" class="text">Scans DOM for edit tags, builds click targets</text>
+
+  <rect x="180" y="250" width="600" height="90" class="box" />
+  <text x="480" y="290" text-anchor="middle" class="label">Live Preview Layer</text>
+  <text x="220" y="315" class="text">Session, events, preview content updates</text>
+
+  <rect x="180" y="380" width="600" height="90" class="box" />
+  <text x="480" y="420" text-anchor="middle" class="label">Your Website</text>
+  <text x="220" y="445" class="text">Renders content with data-cslp attributes</text>
+</svg>

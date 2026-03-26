@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" role="img" aria-label="CSR, SSR, SSG preview flow comparison">
+  <defs>
+    <style>
+      .title { font: 600 20px/1.2 "Helvetica Neue", Arial, sans-serif; fill: #111827; }
+      .label { font: 600 14px/1.2 "Helvetica Neue", Arial, sans-serif; fill: #111827; }
+      .text  { font: 12.5px/1.3 "Helvetica Neue", Arial, sans-serif; fill: #111827; }
+      .box   { fill: #f9fafb; stroke: #d1d5db; stroke-width: 1.5; rx: 10; }
+    </style>
+  </defs>
+  <rect x="0" y="0" width="960" height="560" fill="#ffffff" />
+  <text x="40" y="36" class="title">Rendering Strategies: Preview Update Path</text>
+
+  <rect x="40" y="80" width="280" height="420" class="box" />
+  <rect x="340" y="80" width="280" height="420" class="box" />
+  <rect x="640" y="80" width="280" height="420" class="box" />
+
+  <text x="180" y="110" text-anchor="middle" class="label">CSR</text>
+  <text x="480" y="110" text-anchor="middle" class="label">SSR</text>
+  <text x="780" y="110" text-anchor="middle" class="label">SSG (Preview Mode)</text>
+
+  <text x="60" y="150" class="text">Event → Refetch</text>
+  <text x="60" y="170" class="text">Render in browser</text>
+  <text x="60" y="190" class="text">No reload</text>
+
+  <text x="360" y="150" class="text">Event → Reload iframe</text>
+  <text x="360" y="170" class="text">Server fetch + render</text>
+  <text x="360" y="190" class="text">Full request cycle</text>
+
+  <text x="660" y="150" class="text">Preview mode enabled</text>
+  <text x="660" y="170" class="text">Behaves like SSR</text>
+  <text x="660" y="190" class="text">Static files bypassed</text>
+
+  <text x="60" y="250" class="text">Best when: SPA,</text>
+  <text x="60" y="270" class="text">client data fetching</text>
+
+  <text x="360" y="250" class="text">Best when: SEO,</text>
+  <text x="360" y="270" class="text">server data fetching</text>
+
+  <text x="660" y="250" class="text">Best when: static</text>
+  <text x="660" y="270" class="text">production output</text>
+</svg>

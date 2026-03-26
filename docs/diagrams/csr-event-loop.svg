@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" role="img" aria-label="CSR live preview event loop">
+  <defs>
+    <style>
+      .title { font: 600 20px/1.2 "Helvetica Neue", Arial, sans-serif; fill: #111827; }
+      .label { font: 600 14px/1.2 "Helvetica Neue", Arial, sans-serif; fill: #111827; }
+      .text  { font: 12.5px/1.3 "Helvetica Neue", Arial, sans-serif; fill: #111827; }
+      .box   { fill: #f9fafb; stroke: #d1d5db; stroke-width: 1.5; rx: 10; }
+      .arrow { stroke: #111827; stroke-width: 2; fill: none; }
+    </style>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L12,6 L0,12 z" fill="#111827" />
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="960" height="560" fill="#ffffff" />
+  <text x="40" y="36" class="title">CSR Preview Event Loop</text>
+
+  <rect x="120" y="120" width="260" height="70" class="box" />
+  <text x="250" y="160" text-anchor="middle" class="label">Editor types</text>
+
+  <rect x="580" y="120" width="260" height="70" class="box" />
+  <text x="710" y="160" text-anchor="middle" class="label">SDK event</text>
+
+  <rect x="120" y="260" width="260" height="70" class="box" />
+  <text x="250" y="300" text-anchor="middle" class="label">Refetch draft</text>
+
+  <rect x="580" y="260" width="260" height="70" class="box" />
+  <text x="710" y="300" text-anchor="middle" class="label">Update state</text>
+
+  <rect x="350" y="400" width="260" height="70" class="box" />
+  <text x="480" y="440" text-anchor="middle" class="label">Re-render</text>
+
+  <line x1="380" y1="155" x2="580" y2="155" class="arrow" marker-end="url(#arrow)" />
+  <line x1="710" y1="190" x2="710" y2="260" class="arrow" marker-end="url(#arrow)" />
+  <line x1="380" y1="295" x2="580" y2="295" class="arrow" marker-end="url(#arrow)" />
+  <line x1="710" y1="330" x2="520" y2="400" class="arrow" marker-end="url(#arrow)" />
+  <line x1="350" y1="435" x2="250" y2="260" class="arrow" marker-end="url(#arrow)" />
+</svg>
