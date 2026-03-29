@@ -111,6 +111,7 @@ Each block has a type, an index in the array, and type-specific fields. The inde
 ```javascript
 function PageComponents({ components }) {
   return components.map((block, index) => {
+    // Index is part of the Contentstack field path for modular blocks
     const basePath = `page_components.${index}`;
 
     switch (block._content_type_uid) {
@@ -128,6 +129,7 @@ function HeroBlock({ block, basePath }) {
   const { tag } = useEditTags();
   return (
     <section {...tag(`${basePath}.hero_block`)}>
+      {/* Paths must match block key names in the content model */}
       <h1 {...tag(`${basePath}.hero_block.headline`)}>{block.headline}</h1>
       <p {...tag(`${basePath}.hero_block.description`)}>{block.description}</p>
     </section>
@@ -150,6 +152,7 @@ function FeaturesBlock({ block, basePath }) {
       <ul>
         {block.items.map((item, itemIndex) => (
           <li key={itemIndex}>
+            {/* Nested index in path → click targets the correct list item in the entry form */}
             <span {...tag(`${basePath}.features_block.items.${itemIndex}.title`)}>
               {item.title}
             </span>
@@ -185,7 +188,7 @@ This lets editors click on the author's name and edit the author entry directly.
 Don't scatter edit tag string literals across components:
 
 ```javascript
-// GOOD: Centralized helper
+// GOOD: Centralized helper — builds the data-cslp prefix once per entry
 export function createEditTagHelper(entry, contentTypeUid, locale = 'en-us') {
   return {
     tag: (fieldPath) => ({
@@ -196,7 +199,6 @@ export function createEditTagHelper(entry, contentTypeUid, locale = 'en-us') {
   };
 }
 
-// Usage
 function HeroComponent({ entry }) {
   const { tag } = createEditTagHelper(entry, 'page');
   return (
@@ -240,14 +242,14 @@ Requires Live Preview Utils SDK v3.0+ and Delivery SDK v3.20.3+. Set `mode` to `
 
 ```javascript
 ContentstackLivePreview.init({
-  mode: "builder",  // "preview" for Live Preview only, "builder" for Visual Builder
+  mode: "builder", // Enables DOM scanning + click-to-field on top of Live Preview
   stackDetails: {
     apiKey: "your-stack-api-key",
     environment: "your-environment",
   },
   editInVisualBuilderButton: {
     enable: true,
-    position: "bottom-right",
+    position: "bottom-right", // Floating control to jump back into Visual Builder
   },
 });
 ```
@@ -296,6 +298,7 @@ To let editors add, delete, and reorder blocks through Visual Builder, attach th
 ```jsx
 <div className="page-components">
   {entry.page_components?.map((component, index) => (
+    // addEditableTags generates `page_components__{index}` keys on entry.$
     <div key={index} {...entry.$[`page_components__${index}`]}>
       <ComponentRenderer component={component} />
     </div>
@@ -324,6 +327,7 @@ import { VB_EmptyBlockParentClass } from '@contentstack/live-preview-utils';
 ```
 
 ```jsx
+{/* VB_EmptyBlockParentClass: drop zone when modular blocks field is empty */}
 <div className={`page-components ${VB_EmptyBlockParentClass}`} {...entry.$?.blocks}>
   {entry.page_components?.map((component, index) => (
     <div key={index} {...entry.$[`page_components__${index}`]}>
@@ -381,6 +385,7 @@ If clicks open the wrong field, inspect the element's `data-cslp` value in devto
 As content models evolve, keep edit tags in sync:
 
 ```typescript
+// Single source of truth for field paths — refactor when the content model changes
 export const FIELD_PATHS = {
   page: {
     title: 'title',
@@ -393,7 +398,7 @@ export const FIELD_PATHS = {
   }
 } as const;
 
-// Usage
+// Usage: tag(FIELD_PATHS.page.hero.headline) stays aligned with stack schema
 <h1 {...tag(FIELD_PATHS.page.hero.headline)}>
 ```
 

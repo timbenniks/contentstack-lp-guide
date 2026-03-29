@@ -38,6 +38,7 @@ export async function GET(request) {
     return new Response('Invalid token', { status: 401 });
   }
 
+  // Cookie-backed flag: subsequent requests render dynamically and can use Preview API
   draftMode().enable();
 
   return new Response(null, {
@@ -52,6 +53,7 @@ import { draftMode } from 'next/headers';
 export default async function Page({ params }) {
   const { isEnabled } = draftMode();
 
+  // Draft mode ON → behave like SSR for this request; OFF → use built static data path
   const data = isEnabled
     ? await fetchDraftContent(params.slug)
     : await fetchPublishedContent(params.slug);
@@ -76,7 +78,7 @@ export default function handler(req, res) {
     return res.status(401).json({ message: 'Invalid token' });
   }
 
-  res.setPreviewData({});
+  res.setPreviewData({}); // Sets preview cookies for the browser session
   res.redirect(`/${slug}`);
 }
 
@@ -88,6 +90,7 @@ export async function getStaticProps({ params, preview }) {
 
   return {
     props: { data },
+    // Disable ISR caching while previewing so drafts are not frozen in edge cache
     revalidate: preview ? false : 60
   };
 }
@@ -108,11 +111,11 @@ Astro supports per-route SSR, making it straightforward:
 ```javascript
 // astro.config.mjs
 export default defineConfig({
-  output: 'hybrid',  // Mostly static, some SSR
+  output: 'hybrid', // Allow some routes to opt into server rendering
 });
 
 // src/pages/[slug].astro
-export const prerender = false;  // This page uses SSR for preview
+export const prerender = false; // This route is always server-rendered (needed for live_preview hash)
 
 const { slug } = Astro.params;
 const livePreviewHash = Astro.url.searchParams.get('live_preview');
@@ -138,7 +141,8 @@ function Page({ data }) {
 
   useEffect(() => {
     if (isPreviewMode()) {
-      fetchDraftContent().then(setContent);  // Causes hydration mismatch + flicker
+      // Client replaces props after paint → HTML from build ≠ first client render
+      fetchDraftContent().then(setContent);
     }
   }, []);
 

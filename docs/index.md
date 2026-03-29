@@ -14,6 +14,7 @@ This guide uses the [Contentstack Next.js Kickstart](https://github.com/contents
 import contentstack, { QueryOperation } from "@contentstack/delivery-sdk";
 import ContentstackLivePreview, { IStackSdk } from "@contentstack/live-preview-utils";
 
+// Delivery SDK instance: when the live preview hash is present, requests go to the Preview API (drafts).
 export const stack = contentstack.stack({
   apiKey: process.env.NEXT_PUBLIC_CONTENTSTACK_API_KEY as string,
   deliveryToken: process.env.NEXT_PUBLIC_CONTENTSTACK_DELIVERY_TOKEN as string,
@@ -25,11 +26,12 @@ export const stack = contentstack.stack({
   },
 });
 
+// Run in the browser only. Wires the iframe session to your stack and enables Visual Builder chrome.
 export function initLivePreview() {
   ContentstackLivePreview.init({
-    ssr: false,
+    ssr: false, // CSR: refetch in place instead of full reloads
     mode: "builder",
-    stackSdk: stack.config as IStackSdk,
+    stackSdk: stack.config as IStackSdk, // So the SDK can inject hash + content type context
     stackDetails: { apiKey: "...", environment: "..." },
     editButton: { enable: true },
   });
@@ -41,6 +43,7 @@ export async function getPage(url: string) {
     .where("url", QueryOperation.EQUALS, url)
     .find();
   const entry = result.entries?.[0];
+  // Populates `entry.$` with data-cslp props for click-to-edit in preview
   if (entry) contentstack.Utils.addEditableTags(entry, "page", true);
   return entry;
 }
@@ -58,11 +61,12 @@ import Page from "./Page";
 export default function Preview({ path }: { path: string }) {
   const [page, setPage] = useState();
   const getContent = useCallback(async () => {
-    setPage(await getPage(path));
+    setPage(await getPage(path)); // Preview API returns latest draft for current hash
   }, [path]);
 
   useEffect(() => {
     initLivePreview();
+    // Fires on every editor change in the stack UI → refetch → re-render
     ContentstackLivePreview.onEntryChange(getContent);
   }, [path]);
 
@@ -79,8 +83,10 @@ import { VB_EmptyBlockParentClass } from "@contentstack/live-preview-utils";
 export default function ContentDisplay({ page }: { page: Page | undefined }) {
   return (
     <main>
+      {/* Spreads add data-cslp (and related attrs) so Visual Builder can target each field */}
       <h1 {...page.$?.title}>{page?.title}</h1>
 
+      {/* VB_EmptyBlockParentClass marks the modular-blocks container when empty so VB can add blocks */}
       <div className={`blocks ${VB_EmptyBlockParentClass}`} {...page.$?.blocks}>
         {page?.blocks?.map((item, index) => (
           <section key={index} {...page.$?.[`blocks__${index}`]}>
@@ -101,6 +107,7 @@ import Page from "@/components/Page";
 import Preview from "@/components/Preview";
 
 export default async function Home() {
+  // Preview session: client wrapper subscribes to Live Preview; production: one server fetch
   if (isPreview) return <Preview path="/" />;
   const page = await getPage("/");
   return <Page page={page} />;

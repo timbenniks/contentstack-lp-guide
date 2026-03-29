@@ -41,13 +41,13 @@ Every SSR implementation must satisfy these requirements:
 The initial request already contains the hash. Your server must detect this immediately and fetch draft content.
 
 ```javascript
-// WRONG: Fetch published first, "fix" with hydration → causes flicker
+// WRONG: Ignores live_preview on first paint → published HTML, then draft = flicker/wrong state
 export async function getServerSideProps() {
   const data = await fetchDeliveryAPI();
   return { props: { data } };
 }
 
-// CORRECT: Check preview context first
+// CORRECT: Same request must use Preview API whenever the hash is present
 export async function getServerSideProps({ query }) {
   const isPreview = !!query.live_preview;
   const data = isPreview
@@ -64,11 +64,11 @@ This is where many SSR implementations fail. Preview configuration must be **req
 ### The Wrong Way
 
 ```javascript
-// DON'T: Global instance mutated per request
+// DON'T: One stack for all users — concurrent requests overwrite each other's live_preview hash
 const stack = contentstack.stack({ /* ... */ });
 
 app.get('/*', async (req, res) => {
-  stack.livePreviewQuery(req.query);  // Shared across all requests!
+  stack.livePreviewQuery(req.query);
   const data = await stack.contentType('page').entry().find();
   res.render('page', { data });
 });
@@ -79,12 +79,11 @@ Under load, requests interleave. One request's preview hash contaminates another
 ### The Right Way
 
 ```javascript
-// DO: New client per request
+// DO: Isolate preview config to this request only
 app.get('/*', async (req, res) => {
   const stack = createContentstackClient(req.query.live_preview);
   const data = await stack.contentType('page').entry().find();
   res.render('page', { data });
-  // stack is garbage collected after response
 });
 
 function createContentstackClient(livePreviewHash) {
@@ -104,6 +103,7 @@ function createContentstackClient(livePreviewHash) {
 
   const stack = contentstack.stack(config);
 
+  // Binds this request's hash to SDK queries (must pair with live_preview config above)
   if (livePreviewHash) {
     stack.livePreviewQuery({ live_preview: livePreviewHash });
   }
@@ -115,6 +115,7 @@ function createContentstackClient(livePreviewHash) {
 ## Disable All Caching for Preview
 
 ```javascript
+// Preview responses are user- and session-specific; never cache at CDN or browser
 if (isPreviewRequest(req)) {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
   res.set('Pragma', 'no-cache');
@@ -133,7 +134,7 @@ import ContentstackLivePreview from "@contentstack/live-preview-utils";
 
 ContentstackLivePreview.init({
   enable: true,
-  ssr: true,  // Critical: SSR mode triggers reloads instead of callbacks
+  ssr: true, // Ask the parent frame to reload the iframe so the server runs again with a fresh hash
   stackDetails: {
     apiKey: "your-api-key",
     environment: "your-environment"
@@ -155,6 +156,7 @@ function navigateTo(url) {
   const previewHash = currentUrl.searchParams.get('live_preview');
   if (previewHash) {
     newUrl.searchParams.set('live_preview', previewHash);
+    // CMS often adds these; carry them so the next SSR request stays in the same preview context
     ['content_type_uid', 'entry_uid', 'locale'].forEach(param => {
       const value = currentUrl.searchParams.get(param);
       if (value) newUrl.searchParams.set(param, value);
@@ -195,7 +197,7 @@ export default function LivePreviewInit() {
   useEffect(() => {
     ContentstackLivePreview.init({
       enable: true,
-      ssr: true,
+      ssr: true, // Triggers full iframe reloads so App Router RSC/SSR runs again per edit
       stackDetails: {
         apiKey: process.env.NEXT_PUBLIC_API_KEY,
         environment: process.env.NEXT_PUBLIC_ENVIRONMENT
@@ -209,6 +211,7 @@ export default function LivePreviewInit() {
 import { createContentstackClient } from '@/lib/contentstack';
 
 export default async function Page({ params, searchParams }) {
+  // searchParams includes live_preview on each iframe reload from the CMS
   const client = createContentstackClient(searchParams.live_preview);
   const data = await client.getEntry(params.slug);
   return <PageContent data={data} />;
@@ -221,6 +224,7 @@ export default async function Page({ params, searchParams }) {
 // pages/[slug].js
 export default function Page({ data }) {
   useEffect(() => {
+    // Browser-side: coordinate reloads with the stack UI; server already fetched `data`
     ContentstackLivePreview.init({ enable: true, ssr: true, stackDetails: { /* ... */ } });
   }, []);
   return <PageContent data={data} />;
@@ -242,6 +246,7 @@ const route = useRoute();
 const livePreviewHash = route.query.live_preview;
 
 const { data } = await useFetch('/api/content', {
+  // Forward hash to your server route so it can call Preview API for this session
   query: { slug: route.params.slug, live_preview: livePreviewHash }
 });
 
@@ -268,6 +273,7 @@ app.get('/*', async (req, res) => {
     res.set('Cache-Control', 'public, max-age=3600');
   }
 
+  // Pass flag into template if you need to inject Live Preview script or edit tags only in preview
   const html = renderPage(data, livePreviewHash);
   res.send(html);
 });

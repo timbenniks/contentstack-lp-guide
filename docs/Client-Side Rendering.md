@@ -35,6 +35,7 @@ Or include directly in HTML:
 ```html
 <script type="module">
   import ContentstackLivePreview from 'https://esm.sh/@contentstack/live-preview-utils@3';
+  // Minimal init; add ssr: false and stackSdk when you fetch via the Delivery SDK in the browser
   ContentstackLivePreview.init({
     stackDetails: { apiKey: "your-stack-api-key" }
   });
@@ -50,12 +51,13 @@ import ContentstackLivePreview from "@contentstack/live-preview-utils";
 
 ContentstackLivePreview.init({
   enable: true,
-  ssr: false,  // Critical: CSR mode
+  ssr: false, // CSR: subscribe and refetch without full page reloads
   stackDetails: {
     apiKey: "your-stack-api-key",
     environment: "your-environment",
     branch: "main"
   },
+  // Where the "Edit in Contentstack" UI opens (region must match your stack)
   clientUrlParams: {
     protocol: "https",
     host: "app.contentstack.com",
@@ -81,6 +83,7 @@ ContentstackLivePreview.init({
 The `clientUrlParams.host` must match your Contentstack region:
 
 ```javascript
+// Contentstack app hostname per region (not the Delivery/Preview API hostname)
 // North America (default)
 clientUrlParams: { host: "app.contentstack.com" }
 
@@ -108,6 +111,7 @@ import ContentstackLivePreview from "@contentstack/live-preview-utils";
 
 function App() {
   useEffect(() => {
+    // Runs once on mount; init is global — do not call per component unless you guard it
     ContentstackLivePreview.init({
       enable: true,
       ssr: false,
@@ -128,6 +132,7 @@ function App() {
 import { createApp } from 'vue';
 import ContentstackLivePreview from "@contentstack/live-preview-utils";
 
+// Init before mount so the first fetch already sees preview session state
 ContentstackLivePreview.init({
   enable: true,
   ssr: false,
@@ -149,11 +154,12 @@ The primary method for CSR. Fires when content is edited, saved, or published. T
 ```javascript
 import { onEntryChange } from "@contentstack/live-preview-utils";
 
+// Callback gets no payload — always refetch authoritative content yourself
 onEntryChange(() => {
   fetchContent();
 });
 
-// With options: skip the initial fire after registration
+// Skip the immediate invocation right after subscribe (useful if you already rendered once)
 onEntryChange(fetchContent, { skipInitialRender: true });
 ```
 
@@ -165,6 +171,7 @@ Fires during real-time editing (as the user types). Use for immediate feedback w
 import { onLiveEdit } from "@contentstack/live-preview-utils";
 
 useEffect(() => {
+  // Higher frequency than onEntryChange; use only when you need keystroke-level updates
   onLiveEdit(() => {
     fetchContent();
   });
@@ -178,10 +185,10 @@ For most applications, `onEntryChange` is sufficient.
 If you're using the Contentstack Delivery SDK configured with `live_preview`, it handles preview context automatically. For raw API calls, include the hash and preview token:
 
 ```javascript
-// Delivery SDK: preview context is automatic
+// Delivery SDK attaches hash + preview token when running inside a preview iframe
 const data = await stack.contentType('page').entry('entry-uid').fetch();
 
-// Raw API calls: include preview credentials
+// Raw fetch: no magic — forward hash and preview_token only when hash is present
 const hash = ContentstackLivePreview.hash;
 const headers = hash ? {
   'preview_token': previewToken,
@@ -194,9 +201,10 @@ const headers = hash ? {
 ```javascript
 import ContentstackLivePreview from "@contentstack/live-preview-utils";
 
+// Session hash from the parent frame; empty outside preview
 const hash = ContentstackLivePreview.hash;
 const config = ContentstackLivePreview.config;
-// config.ssr, config.enable, config.stackDetails, config.windowType
+// Useful fields: config.ssr, config.enable, config.stackDetails, config.windowType
 ```
 
 `windowType` values: `"independent"` (direct browser), `"builder"` (Visual Builder iframe), `"preview"` (Live Preview / Timeline iframe).
@@ -233,14 +241,14 @@ const stack = contentstack.stack({
   live_preview: {
     preview_token: process.env.REACT_APP_PREVIEW_TOKEN,
     enable: true,
-    host: "rest-preview.contentstack.com"
+    host: "rest-preview.contentstack.com" // Preview API when session hash is active
   }
 });
 
 ContentstackLivePreview.init({
   enable: true,
   ssr: false,
-  stackSdk: stack,
+  stackSdk: stack, // Required for CSR so hash and stack metadata stay in sync
   stackDetails: {
     apiKey: process.env.REACT_APP_API_KEY,
     environment: process.env.REACT_APP_ENVIRONMENT
@@ -263,7 +271,7 @@ function Home() {
       const result = await stack
         .contentType("page")
         .entry("home-page-entry-uid")
-        .fetch();
+        .fetch(); // Uses preview or delivery automatically from session
       setPageContent(result);
     } catch (error) {
       console.error("Failed to fetch content:", error);
@@ -273,7 +281,7 @@ function Home() {
   };
 
   useEffect(() => {
-    onEntryChange(fetchPageContent);
+    onEntryChange(fetchPageContent); // Refetch on every preview-side content change
   }, []);
 
   if (loading) return <div>Loading...</div>;
@@ -297,6 +305,7 @@ function PageWithMultipleEntries() {
   const [data, setData] = useState({ header: null, content: null, footer: null });
 
   const fetchAllContent = async () => {
+    // One edit anywhere in preview can invalidate the whole page — refresh everything together
     const [header, content, footer] = await Promise.all([
       stack.contentType("header").entry("header-uid").fetch(),
       stack.contentType("page").entry("page-uid").fetch(),
@@ -330,7 +339,7 @@ useEffect(() => {
   const fetchContent = async () => {
     if (!mounted) return;
     const data = await stack.contentType("page").entry("uid").fetch();
-    if (mounted) setContent(data);
+    if (mounted) setContent(data); // Avoid setState after unmount if refetch is slow
   };
 
   onEntryChange(fetchContent);
@@ -360,10 +369,10 @@ onEntryChange(() => {
 ### Mistake 2: Refetching Without Preview Context
 
 ```javascript
-// Wrong: delivery API, no preview
+// Wrong: CDN delivery only — ignores draft session and live_preview hash
 const data = await fetch('https://cdn.contentstack.io/...');
 
-// Correct: preview API with credentials
+// Correct: preview host + token + hash for the active iframe session
 const hash = ContentstackLivePreview.hash;
 const data = await fetch(`https://rest-preview.contentstack.com/...`, {
   headers: { 'preview_token': previewToken, 'live_preview': hash }
@@ -375,7 +384,7 @@ const data = await fetch(`https://rest-preview.contentstack.com/...`, {
 ```javascript
 useEffect(() => {
   const unsubscribe = onEntryChange(fetchContent);
-  return () => unsubscribe?.();
+  return () => unsubscribe?.(); // Drop listener when the component unmounts
 }, []);
 ```
 
@@ -384,7 +393,7 @@ useEffect(() => {
 ```javascript
 // Problematic: each component subscribes independently → one edit triggers three refetches
 
-// Better: centralized subscription at page level
+// Better: one onEntryChange at the page root, then pass props down
 function Page() {
   const fetchAllPageData = async () => {
     const [header, content, footer] = await Promise.all([

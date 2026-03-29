@@ -469,7 +469,7 @@ import ContentstackLivePreview from '@contentstack/live-preview-utils';
 ContentstackLivePreview.init({
   enable: true,
   mode: 'preview',
-  ssr: false,
+  ssr: false, // CSR: refetch in the browser; use true for SSR (reload iframe per change)
   stackDetails: {
     apiKey: process.env.NEXT_PUBLIC_CS_API_KEY,
     environment: process.env.NEXT_PUBLIC_CS_ENV,
@@ -489,7 +489,7 @@ The SDK exposes a simple subscription model:
 
 ```ts
 ContentstackLivePreview.onEntryChange(() => {
-  refetchContent();
+  refetchContent(); // No event payload — always refetch from Preview API
 });
 ```
 
@@ -552,6 +552,7 @@ Without the SDK, you must handle:
 A simplified example:
 
 ```ts
+// Illustration only — validate event.origin in production; prefer the official SDK
 window.addEventListener('message', (event) => {
   if (event.data?.data?.type === 'client-data-send') {
     window.livePreviewHash = event.data.data.hash;
@@ -673,7 +674,7 @@ In SSR, you must extract the hash from the request itself, not from global state
 Conceptually:
 
 ```ts
-const hash = request.query.live_preview
+const hash = request.query.live_preview // Same query key the CMS appends to the iframe URL
 ```
 
 If there is no hash, the request is not a Live Preview request.
@@ -825,7 +826,7 @@ This avoids:
 Preview detection is intentionally simple:
 
 ```ts
-const isPreview = Boolean(request.query.live_preview)
+const isPreview = Boolean(request.query.live_preview) // Falsy → use delivery API and normal caching
 ```
 
 If isPreview is true:
@@ -863,7 +864,7 @@ During SDK initialization on the client, SSR apps must signal reload behavior:
 ```ts
 ContentstackLivePreview.init({
   enable: true,
-  ssr: true,
+  ssr: true, // CMS reloads iframe so the server renders again with the current hash
   mode: 'preview',
 });
 ```

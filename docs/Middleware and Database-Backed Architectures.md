@@ -27,6 +27,7 @@ export async function GET(request: Request) {
   const content_type_uid = searchParams.get("content_type_uid");
   const pageUrl = searchParams.get("url");
   const live_preview = searchParams.get("live_preview");
+  // Optional; stack may send it for time-aligned preview — forward when present
   const preview_timestamp = searchParams.get("preview_timestamp");
 
   // Pick the right API based on preview context
@@ -48,6 +49,7 @@ export async function GET(request: Request) {
   }
 
   const query = encodeURIComponent(JSON.stringify({ url: pageUrl }));
+  // v3 entries API: same path shape for preview and delivery; host + headers decide which service answers
   const apiUrl = `https://${hostname}/v3/content_types/${content_type_uid}/entries?environment=${process.env.CONTENTSTACK_ENVIRONMENT}&query=${query}`;
 
   const response = await fetch(apiUrl, { headers });
@@ -74,6 +76,7 @@ Content fetching reads the hash from the SDK and passes it to the API route as a
 import ContentstackLivePreview from "@contentstack/live-preview-utils";
 
 export async function getPage(baseUrl: string, url: string) {
+  // Populated inside the preview iframe after the SDK syncs with the parent frame
   const livePreviewHash = ContentstackLivePreview.hash;
   const apiUrl = new URL("/api/middleware", baseUrl);
 
@@ -96,6 +99,7 @@ The page component decides how to render based on whether preview is active. Pre
 ```typescript
 // app/page.tsx
 export default async function Home() {
+  // Preview: client subtree owns SDK + refetch; production: server calls proxy without hash
   if (isPreview) return <Preview path="/" baseUrl={baseUrl} />;
 
   const page = await getPage(baseUrl, "/");
@@ -127,7 +131,7 @@ async function fetchPage(slug) {
 
   const url = new URL(`/api/page/${slug}`, window.location.origin);
   if (livePreviewHash) {
-    url.searchParams.set('live_preview', livePreviewHash);
+    url.searchParams.set('live_preview', livePreviewHash); // BFF must echo this to Contentstack
   }
 
   const response = await fetch(url);
@@ -140,7 +144,7 @@ BFF detects preview and switches API:
 ```javascript
 app.get('/api/page/:slug', async (req, res) => {
   const livePreviewHash = req.query.live_preview;
-  const client = createContentstackClient(livePreviewHash);
+  const client = createContentstackClient(livePreviewHash); // Request-scoped preview config (see SSR chapter)
   const data = await client.getPageBySlug(req.params.slug);
 
   if (livePreviewHash) {
@@ -191,7 +195,7 @@ export function middleware(request) {
   const url = new URL(request.url);
   if (!url.pathname.endsWith('/')) {
     url.pathname += '/';
-    return NextResponse.redirect(url);  // Query params may be lost!
+    return NextResponse.redirect(url); // Relative redirects can drop search string depending on runtime
   }
 }
 
@@ -311,8 +315,8 @@ async function getPageData(slug, livePreviewHash) {
       ? fetchContentstackPreview(slug, livePreviewHash)
       : fetchContentstackDelivery(slug),
 
-    fetchProducts(),       // Not affected by preview
-    fetchCurrentUser()     // Not affected by preview
+    fetchProducts(), // Commerce/CMS-agnostic sources: keep on delivery paths
+    fetchCurrentUser()
   ]);
 
   return { content, products, user, isPreview: !!livePreviewHash };

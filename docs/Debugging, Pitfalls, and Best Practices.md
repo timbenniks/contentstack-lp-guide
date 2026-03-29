@@ -61,6 +61,7 @@ If the preview panel is blank, check for `X-Frame-Options: DENY` or strict CSP `
 ### Step 2: Is the SDK Initializing?
 
 ```javascript
+// Empty string / undefined → not inside an active preview session (or init not run yet)
 console.log('SDK hash:', ContentstackLivePreview.hash);
 console.log('SDK config:', ContentstackLivePreview.config);
 ```
@@ -71,7 +72,7 @@ If not initializing: verify `init()` is called, runs in browser context, and exe
 
 ```javascript
 ContentstackLivePreview.onEntryChange(() => {
-  console.log('Entry change event received');
+  console.log('Entry change event received'); // Should log once per save/edit when handshake is healthy
 });
 ```
 

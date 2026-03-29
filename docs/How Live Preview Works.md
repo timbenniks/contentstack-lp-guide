@@ -108,14 +108,14 @@ const stack = contentstack.stack({
   live_preview: {
     enable: true,
     preview_token: "...",
-    host: "rest-preview.contentstack.com",
+    host: "rest-preview.contentstack.com", // Same SDK switches to this host when hash is active
   },
 });
 
 // Component 3: The SDK (Mediator)
 import ContentstackLivePreview, { IStackSdk } from "@contentstack/live-preview-utils";
 ContentstackLivePreview.init({
-  ssr: false,
+  ssr: false, // CSR loop: subscribe and refetch (see SSR chapter for reload-based flow)
   mode: "builder",
   stackSdk: stack.config as IStackSdk,
   stackDetails: { apiKey: "...", environment: "..." },
@@ -124,6 +124,7 @@ ContentstackLivePreview.init({
 
 // Component 2: Your Website (Renderer)
 ContentstackLivePreview.onEntryChange(async () => {
+  // Event has no payload — always query Preview API again for authoritative draft
   const result = await stack
     .contentType("page").entry().query()
     .where("url", QueryOperation.EQUALS, "/")
@@ -149,13 +150,13 @@ This distinction is a **trust boundary**. Mixing preview and delivery requests i
 ### Authentication
 
 ```javascript
-// Delivery API headers
+// Delivery API: published content only
 {
   "api_key": "your_stack_api_key",
   "access_token": "your_delivery_token"
 }
 
-// Preview API headers
+// Preview API: adds preview credential + session hash (both required for drafts)
 {
   "api_key": "your_stack_api_key",
   "access_token": "your_delivery_token",
@@ -182,14 +183,14 @@ function getContentstackConfig(previewHash) {
       host: 'rest-preview.contentstack.com',
       previewToken: process.env.CONTENTSTACK_PREVIEW_TOKEN,
       livePreviewHash: previewHash
-      // IMPORTANT: Disable any caching
+      // No CDN or app cache — responses are per-session and change continuously
     };
   }
 
   return {
     ...baseConfig,
     host: 'cdn.contentstack.io'
-    // Caching is safe here
+    // Standard delivery: cache-friendly
   };
 }
 ```
