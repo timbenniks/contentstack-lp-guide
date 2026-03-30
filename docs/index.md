@@ -8,7 +8,7 @@ Live Preview creates a continuous feedback loop where editors see their changes 
 
 This guide uses the [Contentstack Next.js Kickstart](https://github.com/contentstack/kickstart-next) as a running example. For a variant that routes all content through a middleware API layer (keeping tokens server-side), see the [Next.js Middleware Kickstart](https://github.com/contentstack/kickstart-next-middleware). By the end, you'll understand every line across these four files.
 
-**`lib/contentstack.ts`** configures the SDK, initializes Live Preview, and fetches content:
+`**lib/contentstack.ts`** configures the SDK, initializes Live Preview, and fetches content:
 
 ```typescript
 import contentstack, { QueryOperation } from "@contentstack/delivery-sdk";
@@ -49,7 +49,7 @@ export async function getPage(url: string) {
 }
 ```
 
-**`components/Preview.tsx`** runs the Live Preview loop, refetching content on every editor change:
+`**components/Preview.tsx**` runs the Live Preview loop, refetching content on every editor change:
 
 ```typescript
 "use client";
@@ -75,7 +75,7 @@ export default function Preview({ path }: { path: string }) {
 }
 ```
 
-**`components/Page.tsx`** renders content with edit tags so editors can click any element to jump to its field:
+`**components/Page.tsx**` renders content with edit tags so editors can click any element to jump to its field:
 
 ```tsx
 import { VB_EmptyBlockParentClass } from "@contentstack/live-preview-utils";
@@ -99,7 +99,7 @@ export default function ContentDisplay({ page }: { page: Page | undefined }) {
 }
 ```
 
-**`app/page.tsx`** routes between preview and production:
+`**app/page.tsx**` routes between preview and production:
 
 ```typescript
 import { getPage, isPreview } from "@/lib/contentstack";
@@ -127,11 +127,13 @@ The first file connects to Contentstack and sets up preview credentials. The sec
 
 Your rendering strategy determines how Live Preview operates. Pick your chapter:
 
-| Strategy | How it handles "show me the new state" | SDK config | Chapter |
-|----------|---------------------------------------|------------|---------|
-| **CSR** | Refetch data in the browser, re-render in place | `ssr: false` | [Client-Side Rendering](./Client-Side%20Rendering.md) |
-| **SSR** | Reload the iframe, re-render on the server | `ssr: true` | [Server-Side Rendering](./Live%20Preview%20with%20Server-Side%20Rendering.md) |
-| **SSG** | Bypass static output via preview mode, behave like SSR | `ssr: true` | [Static Site Generation](./Static%20Site%20Generation%20and%20Preview.md) |
+
+| Strategy | How it handles "show me the new state"                 | SDK config   | Chapter                                                                       |
+| -------- | ------------------------------------------------------ | ------------ | ----------------------------------------------------------------------------- |
+| **CSR**  | Refetch data in the browser, re-render in place        | `ssr: false` | [Client-Side Rendering](./Client-Side%20Rendering.md)                         |
+| **SSR**  | Reload the iframe, re-render on the server             | `ssr: true`  | [Server-Side Rendering](./Live%20Preview%20with%20Server-Side%20Rendering.md) |
+| **SSG**  | Bypass static output via preview mode, behave like SSR | `ssr: true`  | [Static Site Generation](./Static%20Site%20Generation%20and%20Preview.md)     |
+
 
 **Not sure which you're using?**
 
@@ -144,23 +146,28 @@ Your rendering strategy determines how Live Preview operates. Pick your chapter:
 ## Guide Structure
 
 ### Foundations
+
 - [1. How Live Preview Works](./How%20Live%20Preview%20Works.md) — The mental model, architecture, session lifecycle, and APIs
 
 ### Rendering Strategies
+
 - [2. Client-Side Rendering](./Client-Side%20Rendering.md) — SDK setup, subscriptions, and refetch patterns for SPAs
 - [3. Server-Side Rendering](./Live%20Preview%20with%20Server-Side%20Rendering.md) — Reload-based preview, request-scoped clients, hash propagation
 - [4. Static Site Generation](./Static%20Site%20Generation%20and%20Preview.md) — Preview mode, framework escape hatches
 - [5. Middleware and Complex Architectures](./Middleware%20and%20Database-Backed%20Architectures.md) — BFF, edge middleware, database caching
 
 ### Advanced Features
+
 - [6. Edit Tags and Visual Builder](./Edit%20Tags%20and%20Visual%20Builder.md) — Click-to-edit, field paths, Visual Builder integration
 
 ### Operations
+
 - [7. Debugging and Best Practices](./Debugging%2C%20Pitfalls%2C%20and%20Best%20Practices.md) — Systematic debugging, common pitfalls, checklists
 
 ## Prerequisites
 
 Before diving in, you should have:
+
 - A working Contentstack stack with content types and entries
 - A frontend application (any framework) that fetches and renders Contentstack content
 - Basic familiarity with your framework's data fetching and rendering
@@ -178,3 +185,7 @@ Before diving in, you should have:
 Optionally, enable the "Display Setup Status" toggle for real-time configuration feedback during setup. Enable "Always Open in New Tab" if you run SDK v4.0.0+ to preview outside the iframe.
 
 If you're starting from scratch, the [Contentstack documentation](https://www.contentstack.com/docs/developers/set-up-live-preview) includes quickstart guides for common frameworks.
+
+## What's Next
+
+You now have the prerequisites in place and basic configuration done. Next, lets take a quick deep dive into how Live Preview works and how it works with different rendering strategies. Proceed to [How Live Preview Works](./How%20Live%20Preview%20Works.md) to get started.
