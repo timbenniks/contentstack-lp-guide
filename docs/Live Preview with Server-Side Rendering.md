@@ -1,5 +1,17 @@
 # Live Preview with Server-Side Rendering
 
+> **Prerequisites:** This chapter builds on [How Live Preview Works](./How%20Live%20Preview%20Works.md). You should understand the session lifecycle, the hash, and the Preview API before proceeding. Familiarity with the [CSR chapter](./Client-Side%20Rendering.md) helps for contrast but isn't required.
+
+> **What you'll be able to do after this chapter:**
+> - Implement request-scoped preview clients that prevent hash leakage between users
+> - Propagate the live preview hash across page navigation and redirects
+> - Explain why SSR preview reloads the iframe instead of refetching in place
+> - Disable caching correctly for preview responses at every layer
+
+**Why this matters:** SSR preview is more fragile than CSR because the server context is destroyed after each response. The most dangerous SSR failure — one editor's preview hash leaking into another editor's session via a shared SDK instance — produces correct-looking results in development and breaks silently under production load. The patterns in this chapter prevent that.
+
+---
+
 In SSR, the server renders a complete page, sends it to the browser, and the server-side context is destroyed. Every preview update means a full round trip — there's no persistent process to receive events and refetch in place.
 
 This contract holds regardless of your framework: Next.js, Nuxt, Remix, Astro SSR, Express, or custom Node.js.
@@ -302,3 +314,25 @@ Check in order:
 4. **Is the server seeing the hash?** Add server logging
 5. **Is the server using Preview API?** Log API endpoints being called
 6. **Is caching disabled?** Check response headers
+
+---
+
+## Key Takeaways
+
+- SSR Live Preview works through iframe reloads, not in-place refetching. Every edit triggers a full server round trip.
+- The SDK must be initialized client-side with `ssr: true` so it signals the CMS to reload the iframe on changes.
+- Preview configuration must be request-scoped. A global SDK instance shared across requests will leak one editor's hash into another's session.
+- The hash must survive navigation. Links, redirects, and middleware must preserve `live_preview` and related query parameters.
+- All caching — CDN, application, framework — must be bypassed when the hash is present.
+
+## Check Your Understanding
+
+1. Why can't you use a single global Contentstack SDK instance for SSR preview? What specifically goes wrong when two editors preview simultaneously?
+2. An editor opens a preview, sees draft content on the first page, clicks a link to another page, and sees published content. What broke?
+3. Your SSR preview works perfectly in development but sometimes shows the wrong editor's changes in production. What architectural difference between development and production would cause this?
+
+## What's Next
+
+- **If your site uses static generation**: [Static Site Generation](./Static%20Site%20Generation%20and%20Preview.md) builds on the SSR patterns with framework-level preview mode escape hatches.
+- **If content flows through middleware or a BFF before reaching your renderer**: [Middleware and Complex Architectures](./Middleware%20and%20Database-Backed%20Architectures.md)
+- **To add click-to-edit to your server-rendered pages**: [Edit Tags and Visual Builder](./Edit%20Tags%20and%20Visual%20Builder.md)

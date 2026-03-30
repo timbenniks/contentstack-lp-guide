@@ -1,5 +1,16 @@
 # Middleware and Database-Backed Architectures
 
+> **Prerequisites:** This chapter builds on [How Live Preview Works](./How%20Live%20Preview%20Works.md) and assumes familiarity with at least one rendering strategy chapter ([CSR](./Client-Side%20Rendering.md), [SSR](./Live%20Preview%20with%20Server-Side%20Rendering.md), or [SSG](./Static%20Site%20Generation%20and%20Preview.md)). The core concepts — hash propagation, Preview vs Delivery API switching, and caching rules — apply here across additional architectural layers.
+
+> **What you'll be able to do after this chapter:**
+> - Route preview context through a BFF or API proxy without exposing tokens to the browser
+> - Ensure edge middleware, redirects, and URL normalization preserve the live preview hash
+> - Bypass database and memory caches for preview requests while keeping production caching intact
+
+**Why this matters:** In production, content rarely flows directly from Contentstack to the browser. It passes through API proxies, BFF services, edge middleware, and sometimes a database cache. Each layer is a point where the live preview hash can be silently dropped, stripped, or ignored. When that happens, preview falls back to published content with no error — the failure is invisible. This chapter ensures the hash survives every layer.
+
+---
+
 Many production systems don't fetch content directly from Contentstack in the frontend. They use intermediary layers: BFF services, edge middleware, or database-backed caching. Live Preview works with all of these, but only if preview context flows end to end.
 
 ## The Core Rule
@@ -332,3 +343,34 @@ When Live Preview isn't working in a complex architecture, trace the hash throug
 3. **Does the BFF use preview API?** Log API calls
 4. **Does middleware preserve the hash?** Log before/after middleware
 5. **Is the database being bypassed?** Check data source for preview requests
+
+---
+
+## Key Takeaways
+
+- The core rule is simple: preview context must travel with the request, end to end. Every layer between the browser and the Contentstack API must forward the hash.
+- An API route / BFF proxy centralizes token management (keeping preview tokens server-side) and endpoint switching (one `if (live_preview)` check instead of scattered logic).
+- Edge middleware is a common source of silent hash loss. URL normalization, parameter stripping, and authentication redirects can all drop the `live_preview` query parameter.
+- Preview content must never be written to a shared database or persistent cache. It's session-scoped and transient — storing it means other users might see drafts or stale sessions.
+
+## Check Your Understanding
+
+1. Your BFF returns cached content for performance. An editor activates Live Preview, but their changes don't appear. What's the most likely cause, and how would you fix the BFF to handle both preview and production correctly?
+2. Why should preview content never be written to a shared database, even temporarily? What would happen if two editors previewed the same page simultaneously and your database stored both drafts?
+3. Your edge middleware normalizes URLs by adding a trailing slash with a redirect. Why might this break Live Preview, and how would you fix it?
+
+## Exercise: Trace the Hash
+
+Map the path the live preview hash takes through your own architecture, from the CMS iframe URL to the final Contentstack API call. For each layer, answer:
+
+1. Does this layer receive the hash? How? (query parameter, header, cookie)
+2. Does this layer forward the hash? To where?
+3. Could this layer silently drop the hash? (redirects, URL rewrites, parameter stripping)
+4. Does this layer cache responses? Is caching bypassed when the hash is present?
+
+If you find a gap — a layer that doesn't forward the hash or doesn't bypass caching — that's where your preview will break.
+
+## What's Next
+
+- **To add click-to-edit and Visual Builder capabilities**: [Edit Tags and Visual Builder](./Edit%20Tags%20and%20Visual%20Builder.md)
+- **To systematically debug preview issues**: [Debugging and Best Practices](./Debugging%2C%20Pitfalls%2C%20and%20Best%20Practices.md)

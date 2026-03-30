@@ -1,5 +1,15 @@
 # How Live Preview Works
 
+> **What you'll be able to do after this chapter:**
+> - Describe the three participants in a Live Preview session and the role each plays
+> - Explain why change events carry no payload and why your site must always refetch
+> - Trace the full lifecycle of a preview hash from session creation to invalidation
+> - Distinguish Preview API from Delivery API and know when to use each
+
+**Why this matters:** Most Live Preview bugs trace back to a misunderstanding of the architecture. Previews that show published content instead of drafts, sessions that silently break on navigation, caching layers that serve stale data — these all stem from the same root cause: not knowing how the pieces fit together. The mental model in this chapter prevents that entire class of problems.
+
+---
+
 Live Preview is a coordinated, session-scoped conversation between three participants: the CMS where editors work, your running website, and the preview services that serve draft content. The CMS signals that something changed, your site decides how to re-render, and the preview services authorize and return draft data on demand.
 
 This chapter covers the architecture, the session model, the APIs, and the communication protocol. Every concept is explained once here; the rendering strategy chapters that follow build on this foundation.
@@ -264,3 +274,28 @@ You can check the current context through `ContentstackLivePreview.config.window
 - `"preview"`: iframe-based Live Preview or Timeline preview
 - `"builder"`: Visual Builder iframe
 - `"independent"`: direct browser access
+
+---
+
+## Key Takeaways
+
+- Live Preview is a three-party system: the CMS signals changes, your site refetches and re-renders, and the Preview API serves session-scoped draft content.
+- Change events carry intent, not payload. Your site always refetches from the Preview API rather than extracting content from events.
+- The live preview hash is runtime state — short-lived, session-scoped, and never cacheable. Treat it like a request token, not a configuration value.
+- The Preview API and Delivery API share the same interface but serve different content. Mixing them in a single page produces inconsistent data.
+- The SDK is a thin mediator. It manages the postMessage handshake and session state but does not fetch content, manage application state, or render anything.
+
+## Check Your Understanding
+
+1. An editor opens an entry, makes a change, and your preview still shows the old content. Based on what you learned about the five components, which boundaries would you check first?
+2. Why doesn't the CMS push updated content directly into your site's DOM? What would break if it did?
+3. An editor closes an entry and reopens it five minutes later. Can the site reuse the hash from the previous session? Why or why not?
+4. Your team proposes caching Preview API responses for 30 seconds to reduce API calls. Why is this unsafe?
+
+## What's Next
+
+You now have the architectural foundation. The next step is applying it to your specific rendering strategy:
+
+- **If your app fetches content in the browser** (SPAs, client-side React/Vue): [Client-Side Rendering](./Client-Side%20Rendering.md)
+- **If your server renders HTML per request**: [Server-Side Rendering](./Live%20Preview%20with%20Server-Side%20Rendering.md)
+- **If your pages are built at deploy time**: [Static Site Generation](./Static%20Site%20Generation%20and%20Preview.md)

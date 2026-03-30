@@ -1,5 +1,17 @@
 # Edit Tags and Visual Builder
 
+> **Prerequisites:** This chapter builds on [How Live Preview Works](./How%20Live%20Preview%20Works.md). You should have a working Live Preview implementation (via any rendering strategy) before adding edit tags. Edit tags add interactivity *on top of* Live Preview's real-time updates.
+
+> **What you'll be able to do after this chapter:**
+> - Add `data-cslp` edit tags to your components so editors can click any element to jump to its CMS field
+> - Construct correct field paths for flat fields, nested modular blocks, repeated items, and referenced entries
+> - Enable Visual Builder mode and understand how it scans the DOM to create an interactive editing surface
+> - Make informed decisions about which elements to tag and which to skip
+
+**Why this matters:** Live Preview shows editors their changes. Edit tags let them *click* on any rendered element to jump directly to its field in the CMS. Without edit tags, editors must visually match content on the page to fields in the entry form — a tedious process that gets worse as content models grow. With edit tags, your preview becomes an interactive editing surface. Visual Builder takes this further, adding controls for reordering, adding, and deleting blocks directly in the preview.
+
+---
+
 Live Preview updates content in real time. Edit tags add the next layer: they let editors click directly on rendered elements to jump to the corresponding CMS field. Visual Builder uses these tags to transform your preview into an interactive editing surface.
 
 ## What Edit Tags Do
@@ -403,3 +415,25 @@ export const FIELD_PATHS = {
 ```
 
 Central constants, TypeScript types matching your content model, and integration tests that verify tags against the actual model all prevent silent drift.
+
+---
+
+## Key Takeaways
+
+- Edit tags (`data-cslp` attributes) give the CMS the mapping it needs between your rendered HTML and your content model. Without them, your page is just generic HTML to the CMS.
+- The `data-cslp` value follows a strict format: `{content_type_uid}.{entry_uid}.{locale}.{field_path}`. An incorrect path opens the wrong field.
+- Use `addEditableTags` in your data layer (immediately after fetching) rather than constructing tags manually in components. This centralizes tag generation and keeps components clean.
+- Tag content editors frequently modify. Over-tagging clutters the Visual Builder; under-tagging forces editors to hunt through the entry form. Skip structural wrappers and derived content.
+- Visual Builder is a layer on top of Live Preview and edit tags. It scans the DOM for `data-cslp` attributes, calculates regions, and binds click interactions — no new data flow is introduced.
+- Keep field paths in sync with your content model. Centralized path constants and TypeScript types prevent silent drift as models evolve.
+
+## Check Your Understanding
+
+1. An editor clicks a headline in Visual Builder and the wrong field opens in the CMS. What's the most likely cause, and how would you diagnose it?
+2. Your page renders a list of features from a modular block. The first three items work correctly in Visual Builder, but clicking the fourth item opens the third item's field. What's wrong?
+3. Your page includes an author card that renders data from a referenced entry. Should the edit tag point to the referencing field on the page entry or to the referenced author entry? Why?
+4. A colleague proposes adding `data-cslp` to every `<div>` wrapper in the component tree for maximum coverage. What's the practical downside?
+
+## What's Next
+
+- **To learn systematic debugging techniques and a checklist for every Live Preview implementation**: [Debugging and Best Practices](./Debugging%2C%20Pitfalls%2C%20and%20Best%20Practices.md)

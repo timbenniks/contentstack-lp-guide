@@ -1,5 +1,17 @@
 # Client-Side Rendering
 
+> **Prerequisites:** This chapter builds on [How Live Preview Works](./How%20Live%20Preview%20Works.md). You should understand the session lifecycle, the role of the live preview hash, and why change events carry no payload before proceeding.
+
+> **What you'll be able to do after this chapter:**
+> - Initialize the Live Preview SDK for CSR with the correct configuration
+> - Subscribe to content changes and implement the refetch-on-change pattern
+> - Handle multi-entry pages, cleanup, and component lifecycle correctly
+> - Identify and avoid common CSR pitfalls: stale closures, missing cleanup, and redundant subscriptions
+
+**Why this matters:** CSR is the fastest path to a working Live Preview. If your app already manages client-side state, you can have real-time preview updating in under 20 lines of code. But small mistakes — subscribing in the wrong place, merging state instead of replacing it, or forgetting cleanup — produce bugs that are subtle and hard to trace. This chapter shows you the patterns that work and the mistakes to avoid.
+
+---
+
 CSR is the most natural fit for Live Preview. Your app is already wired to react to state changes — Live Preview just adds one more source of those changes. Updates happen in place without page reloads.
 
 ## The CSR Flow With Live Preview
@@ -419,3 +431,38 @@ Manual implementation without the SDK is possible but fragile and not recommende
 5. **Handle loading states** — show indicators while refetching
 6. **Clean up on unmount** — prevent memory leaks and stale updates
 7. **Prefer the SDK** — manual implementations are fragile
+
+---
+
+## Key Takeaways
+
+- CSR Live Preview works by subscribing to change events and refetching in the same browser runtime — no page reloads needed.
+- Initialize the SDK once, early in the app lifecycle, with `ssr: false`. Late initialization means the first content fetch misses the preview context.
+- Subscribe to `onEntryChange` at the page level, not per component. One edit should trigger one refetch, not many.
+- Always replace state atomically. Merging old and new state risks rendering a mix of stale and fresh content.
+- Clean up subscriptions on unmount to prevent memory leaks and state updates on destroyed components.
+
+## Check Your Understanding
+
+1. Why should you replace state entirely on each refetch rather than merging the new data into existing state? What specific failure does merging cause?
+2. What happens if three components on the same page each register their own `onEntryChange` callback? How would you restructure this?
+3. Your `onEntryChange` callback references a variable from the component's closure. The variable was correct when the callback was registered but is stale now. What pattern prevents this?
+
+## Try It
+
+Add Live Preview to a single-page React (or Vue) app that fetches content from Contentstack:
+
+1. Install `@contentstack/live-preview-utils` and `@contentstack/delivery-sdk`
+2. Configure the SDK with `ssr: false` and your stack credentials
+3. Subscribe to `onEntryChange` and refetch your page content in the callback
+4. Open the entry in Contentstack with Live Preview enabled
+5. Edit a title field and verify the page updates in the preview without a full reload
+
+If the title doesn't update, walk through the debugging steps from [Chapter 7](./Debugging%2C%20Pitfalls%2C%20and%20Best%20Practices.md): Is the hash in the URL? Is the SDK initializing? Are change events firing?
+
+## What's Next
+
+- **If your production site uses SSR** and you need preview for server-rendered pages: [Server-Side Rendering](./Live%20Preview%20with%20Server-Side%20Rendering.md)
+- **If your site is statically generated**: [Static Site Generation](./Static%20Site%20Generation%20and%20Preview.md)
+- **If your content flows through a BFF or middleware layer**: [Middleware and Complex Architectures](./Middleware%20and%20Database-Backed%20Architectures.md)
+- **To add click-to-edit capabilities on top of Live Preview**: [Edit Tags and Visual Builder](./Edit%20Tags%20and%20Visual%20Builder.md)
