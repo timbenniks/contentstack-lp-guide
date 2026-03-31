@@ -1,13 +1,13 @@
 # Static Site Generation and Preview
 
-> **Prerequisites:** This chapter builds on [How Live Preview Works](./How%20Live%20Preview%20Works.md) and shares concepts with [Server-Side Rendering](./Live%20Preview%20with%20Server-Side%20Rendering.md). Understanding why preview requires runtime rendering helps you see why SSG needs an escape hatch.
+> **Prerequisites:** This chapter builds on [How Live Preview Works](./01-How%20Live%20Preview%20Works.md) and shares concepts with [Server-Side Rendering](./03-Live%20Preview%20with%20Server-Side%20Rendering.md). Understanding why preview requires runtime rendering helps you see why SSG needs an escape hatch.
 
 > **What you'll be able to do after this chapter:**
 > - Explain why SSG fundamentally conflicts with Live Preview and what the escape hatch is
 > - Configure Next.js Draft Mode or Astro hybrid rendering for preview
 > - Avoid the client-side patching antipattern and the hydration mismatches it causes
 
-**Why this matters:** SSG is the hardest rendering strategy for Live Preview because static files fundamentally cannot show drafts — there's no server to fetch them and no runtime to respond to changes. Teams that try to patch static content with client-side refetching hit hydration mismatches, layout flicker, and inconsistent state. This chapter shows you the framework-level escape hatches that make preview work cleanly.
+**Why this matters:** Static files can't show drafts. Teams that try to patch static content client-side hit hydration mismatches and flicker. This chapter shows the framework-level escape hatches that make preview work cleanly.
 
 ---
 
@@ -15,7 +15,7 @@ SSG's core value (pre-built HTML served without runtime computation) directly co
 
 ## The Fundamental Conflict
 
-At build time, your generator fetches published content and renders HTML files. These files are deployed to a CDN. No server runs, no API calls fire per request. Live Preview needs runtime rendering of draft content — rebuilding and redeploying on every keystroke isn't practical.
+At build time, your generator fetches published content and renders HTML files. These files are deployed to a CDN. No server runs, no API calls fire per request. Live Preview needs runtime rendering of draft content  - rebuilding and redeploying on every keystroke isn't practical.
 
 ## The Solution: Preview Mode
 
@@ -202,16 +202,16 @@ Contentstack's documentation states that SSG sites run Live Preview in CSR mode 
 
 The full picture: your framework's preview mode bypasses static files and renders dynamically. The Live Preview SDK runs in CSR mode within that dynamic context, fetching draft content and re-rendering in place. The framework handles "escape from static" and the SDK handles the "fetch draft content" loop.
 
-If your SSG framework lacks a preview mode, you can run the SDK in CSR mode and fetch draft content client-side on top of the static page. This works but causes the hydration mismatch and flicker described above — use it as a fallback, not a primary strategy.
+If your SSG framework lacks a preview mode, you can run the SDK in CSR mode and fetch draft content client-side on top of the static page. This works but causes the hydration mismatch and flicker described above  - use it as a fallback, not a primary strategy.
 
 ---
 
 ## Key Takeaways
 
-- SSG and Live Preview have a fundamental tension: static files can't show drafts. The solution is a framework-level preview mode that temporarily switches to dynamic rendering.
-- In preview mode, SSG pages behave like SSR — fetching from the Preview API per request with no caching.
-- Client-side patching of static content (fetching drafts in `useEffect` on top of build-time HTML) causes hydration mismatches, layout flicker, and inconsistent state. Use your framework's preview mode instead.
-- The SDK typically runs in CSR mode (`ssr: false`) within the dynamic preview context, fetching drafts and re-rendering in place.
+- Static files can't show drafts. Use your framework's preview mode to temporarily switch to dynamic rendering.
+- In preview mode, SSG pages behave like SSR: Preview API per request, no caching.
+- Don't patch static content client-side. It causes hydration mismatches and flicker.
+- The SDK runs in CSR mode (`ssr: false`) within the dynamic preview context.
 
 ## Check Your Understanding
 
@@ -221,6 +221,6 @@ If your SSG framework lacks a preview mode, you can run the SDK in CSR mode and 
 
 ## What's Next
 
-- **If your content flows through middleware, a BFF, or a database cache**: [Middleware and Complex Architectures](./Middleware%20and%20Database-Backed%20Architectures.md)
-- **To add click-to-edit capabilities to your previewed pages**: [Edit Tags and Visual Builder](./Edit%20Tags%20and%20Visual%20Builder.md)
-- **To debug preview issues in your SSG setup**: [Debugging and Best Practices](./Debugging%2C%20Pitfalls%2C%20and%20Best%20Practices.md)
+- **If your content flows through middleware, a BFF, or a database cache**: [Middleware and Complex Architectures](./05-Middleware%20and%20Database-Backed%20Architectures.md)
+- **To add click-to-edit capabilities to your previewed pages**: [Edit Tags and Visual Builder](./06-Edit%20Tags%20and%20Visual%20Builder.md)
+- **To debug preview issues in your SSG setup**: [Debugging and Best Practices](./07-Debugging%2C%20Pitfalls%2C%20and%20Best%20Practices.md)

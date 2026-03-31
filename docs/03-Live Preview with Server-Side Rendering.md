@@ -1,18 +1,19 @@
 # Live Preview with Server-Side Rendering
 
-> **Prerequisites:** This chapter builds on [How Live Preview Works](./How%20Live%20Preview%20Works.md). You should understand the session lifecycle, the hash, and the Preview API before proceeding. Familiarity with the [CSR chapter](./Client-Side%20Rendering.md) helps for contrast but isn't required.
+> **Prerequisites:** This chapter builds on [How Live Preview Works](./01-How%20Live%20Preview%20Works.md). You should understand the session lifecycle, the hash, and the Preview API before proceeding. Familiarity with the [CSR chapter](./02-Client-Side%20Rendering.md) helps for contrast but isn't required.
 
 > **What you'll be able to do after this chapter:**
+>
 > - Implement request-scoped preview clients that prevent hash leakage between users
 > - Propagate the live preview hash across page navigation and redirects
 > - Explain why SSR preview reloads the iframe instead of refetching in place
 > - Disable caching correctly for preview responses at every layer
 
-**Why this matters:** SSR preview is more fragile than CSR because the server context is destroyed after each response. The most dangerous SSR failure — one editor's preview hash leaking into another editor's session via a shared SDK instance — produces correct-looking results in development and breaks silently under production load. The patterns in this chapter prevent that.
+**Why this matters:** The most dangerous SSR failure - one editor's preview hash leaking into another's session via a shared SDK instance - produces correct-looking results in development and breaks silently under production load.
 
 ---
 
-In SSR, the server renders a complete page, sends it to the browser, and the server-side context is destroyed. Every preview update means a full round trip — there's no persistent process to receive events and refetch in place.
+In SSR, the server renders a complete page, sends it to the browser, and the server-side context is destroyed. Every preview update means a full round trip - there's no persistent process to receive events and refetch in place.
 
 This contract holds regardless of your framework: Next.js, Nuxt, Remix, Astro SSR, Express, or custom Node.js.
 
@@ -27,24 +28,6 @@ Every SSR implementation must satisfy these requirements:
 5. **No caching**: Preview responses must never be cached
 
 ## The Update Cycle
-
-```
-1. Editor types in CMS
-         ↓
-2. CMS emits change event via postMessage
-         ↓
-3. SDK (in browser) receives event
-         ↓
-4. SDK signals CMS: "reload needed" (ssr: true mode)
-         ↓
-5. CMS reloads iframe with current URL + hash
-         ↓
-6. Browser requests fresh page from server
-         ↓
-7. Server extracts hash, fetches draft content from Preview API
-         ↓
-8. Server renders HTML, browser displays updated preview
-```
 
 ![SSR preview update cycle](./diagrams/ssr-update-cycle.svg)
 
@@ -88,13 +71,15 @@ This is where many SSR implementations fail. Preview configuration must be **req
 ### The Wrong Way
 
 ```javascript
-// DON'T: One stack for all users — concurrent requests overwrite each other's live_preview hash
-const stack = contentstack.stack({ /* ... */ });
+// DON'T: One stack for all users  - concurrent requests overwrite each other's live_preview hash
+const stack = contentstack.stack({
+  /* ... */
+});
 
-app.get('/*', async (req, res) => {
+app.get("/*", async (req, res) => {
   stack.livePreviewQuery(req.query);
-  const data = await stack.contentType('page').entry().find();
-  res.render('page', { data });
+  const data = await stack.contentType("page").entry().find();
+  res.render("page", { data });
 });
 ```
 
@@ -104,24 +89,24 @@ Under load, requests interleave. One request's preview hash contaminates another
 
 ```javascript
 // DO: Isolate preview config to this request only
-app.get('/*', async (req, res) => {
+app.get("/*", async (req, res) => {
   const stack = createContentstackClient(req.query.live_preview);
-  const data = await stack.contentType('page').entry().find();
-  res.render('page', { data });
+  const data = await stack.contentType("page").entry().find();
+  res.render("page", { data });
 });
 
 function createContentstackClient(livePreviewHash) {
   const config = {
     apiKey: process.env.API_KEY,
     deliveryToken: process.env.DELIVERY_TOKEN,
-    environment: process.env.ENVIRONMENT
+    environment: process.env.ENVIRONMENT,
   };
 
   if (livePreviewHash) {
     config.live_preview = {
       enable: true,
       preview_token: process.env.PREVIEW_TOKEN,
-      host: 'rest-preview.contentstack.com'
+      host: "rest-preview.contentstack.com",
     };
   }
 
@@ -141,9 +126,9 @@ function createContentstackClient(livePreviewHash) {
 ```javascript
 // Preview responses are user- and session-specific; never cache at CDN or browser
 if (isPreviewRequest(req)) {
-  res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
-  res.set('Pragma', 'no-cache');
-  res.set('Expires', '0');
+  res.set("Cache-Control", "no-store, no-cache, must-revalidate");
+  res.set("Pragma", "no-cache");
+  res.set("Expires", "0");
 }
 ```
 
@@ -161,8 +146,8 @@ ContentstackLivePreview.init({
   ssr: true, // Ask the parent frame to reload the iframe so the server runs again with a fresh hash
   stackDetails: {
     apiKey: "your-api-key",
-    environment: "your-environment"
-  }
+    environment: "your-environment",
+  },
 });
 ```
 
@@ -177,11 +162,11 @@ function navigateTo(url) {
   const currentUrl = new URL(window.location.href);
   const newUrl = new URL(url, window.location.origin);
 
-  const previewHash = currentUrl.searchParams.get('live_preview');
+  const previewHash = currentUrl.searchParams.get("live_preview");
   if (previewHash) {
-    newUrl.searchParams.set('live_preview', previewHash);
+    newUrl.searchParams.set("live_preview", previewHash);
     // CMS often adds these; carry them so the next SSR request stays in the same preview context
-    ['content_type_uid', 'entry_uid', 'locale'].forEach(param => {
+    ["content_type_uid", "entry_uid", "locale"].forEach((param) => {
       const value = currentUrl.searchParams.get(param);
       if (value) newUrl.searchParams.set(param, value);
     });
@@ -191,7 +176,7 @@ function navigateTo(url) {
 }
 ```
 
-Also check middleware and redirects — they often strip query parameters.
+Also check middleware and redirects - they often strip query parameters.
 
 ## Framework Implementations
 
@@ -249,7 +234,13 @@ export default async function Page({ params, searchParams }) {
 export default function Page({ data }) {
   useEffect(() => {
     // Browser-side: coordinate reloads with the stack UI; server already fetched `data`
-    ContentstackLivePreview.init({ enable: true, ssr: true, stackDetails: { /* ... */ } });
+    ContentstackLivePreview.init({
+      enable: true,
+      ssr: true,
+      stackDetails: {
+        /* ... */
+      },
+    });
   }, []);
   return <PageContent data={data} />;
 }
@@ -285,16 +276,16 @@ onMounted(() => {
 ### Express/Node.js
 
 ```javascript
-app.get('/*', async (req, res) => {
+app.get("/*", async (req, res) => {
   const livePreviewHash = req.query.live_preview;
   const client = createContentstackClient(livePreviewHash);
 
   const data = await client.getEntry(req.path);
 
   if (livePreviewHash) {
-    res.set('Cache-Control', 'no-store');
+    res.set("Cache-Control", "no-store");
   } else {
-    res.set('Cache-Control', 'public, max-age=3600');
+    res.set("Cache-Control", "public, max-age=3600");
   }
 
   // Pass flag into template if you need to inject Live Preview script or edit tags only in preview
@@ -307,12 +298,12 @@ app.get('/*', async (req, res) => {
 
 SSR preview is inherently slower than CSR:
 
-| Operation | CSR Preview | SSR Preview |
-|-----------|-------------|-------------|
-| Change to visible | ~100-300ms | ~500-2000ms |
+| Operation           | CSR Preview   | SSR Preview         |
+| ------------------- | ------------- | ------------------- |
+| Change to visible   | ~100-300ms    | ~500-2000ms         |
 | Network round trips | 1 (API fetch) | 2 (page load + API) |
-| Server CPU | None | Full render |
-| Perceived feel | Instant | Noticeable pause |
+| Server CPU          | None          | Full render         |
+| Perceived feel      | Instant       | Noticeable pause    |
 
 If preview speed is critical, consider using CSR mode for preview even if production uses SSR.
 
@@ -331,11 +322,11 @@ Check in order:
 
 ## Key Takeaways
 
-- SSR Live Preview works through iframe reloads, not in-place refetching. Every edit triggers a full server round trip.
-- The SDK must be initialized client-side with `ssr: true` so it signals the CMS to reload the iframe on changes.
-- Preview configuration must be request-scoped. A global SDK instance shared across requests will leak one editor's hash into another's session.
-- The hash must survive navigation. Links, redirects, and middleware must preserve `live_preview` and related query parameters.
-- All caching — CDN, application, framework — must be bypassed when the hash is present.
+- SSR preview reloads the iframe on every edit. No in-place refetching.
+- Initialize the SDK client-side with `ssr: true`.
+- Preview config must be request-scoped. Global SDK instances leak hashes between editors.
+- The hash must survive navigation: links, redirects, and middleware must preserve it.
+- Bypass all caching (CDN, application, framework) when the hash is present.
 
 ## Check Your Understanding
 
@@ -345,6 +336,6 @@ Check in order:
 
 ## What's Next
 
-- **If your site uses static generation**: [Static Site Generation](./Static%20Site%20Generation%20and%20Preview.md) builds on the SSR patterns with framework-level preview mode escape hatches.
-- **If content flows through middleware or a BFF before reaching your renderer**: [Middleware and Complex Architectures](./Middleware%20and%20Database-Backed%20Architectures.md)
-- **To add click-to-edit to your server-rendered pages**: [Edit Tags and Visual Builder](./Edit%20Tags%20and%20Visual%20Builder.md)
+- **If your site uses static generation**: [Static Site Generation](./04-Static%20Site%20Generation%20and%20Preview.md) builds on the SSR patterns with framework-level preview mode escape hatches.
+- **If content flows through middleware or a BFF before reaching your renderer**: [Middleware and Complex Architectures](./05-Middleware%20and%20Database-Backed%20Architectures.md)
+- **To add click-to-edit to your server-rendered pages**: [Edit Tags and Visual Builder](./06-Edit%20Tags%20and%20Visual%20Builder.md)

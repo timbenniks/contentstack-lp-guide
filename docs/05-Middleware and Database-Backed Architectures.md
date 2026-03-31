@@ -1,13 +1,13 @@
 # Middleware and Database-Backed Architectures
 
-> **Prerequisites:** This chapter builds on [How Live Preview Works](./How%20Live%20Preview%20Works.md) and assumes familiarity with at least one rendering strategy chapter ([CSR](./Client-Side%20Rendering.md), [SSR](./Live%20Preview%20with%20Server-Side%20Rendering.md), or [SSG](./Static%20Site%20Generation%20and%20Preview.md)). The core concepts — hash propagation, Preview vs Delivery API switching, and caching rules — apply here across additional architectural layers.
+> **Prerequisites:** This chapter builds on [How Live Preview Works](./01-How%20Live%20Preview%20Works.md) and assumes familiarity with at least one rendering strategy chapter ([CSR](./02-Client-Side%20Rendering.md), [SSR](./03-Live%20Preview%20with%20Server-Side%20Rendering.md), or [SSG](./04-Static%20Site%20Generation%20and%20Preview.md)). The core concepts  - hash propagation, Preview vs Delivery API switching, and caching rules  - apply here across additional architectural layers.
 
 > **What you'll be able to do after this chapter:**
 > - Route preview context through a BFF or API proxy without exposing tokens to the browser
 > - Ensure edge middleware, redirects, and URL normalization preserve the live preview hash
 > - Bypass database and memory caches for preview requests while keeping production caching intact
 
-**Why this matters:** In production, content rarely flows directly from Contentstack to the browser. It passes through API proxies, BFF services, edge middleware, and sometimes a database cache. Each layer is a point where the live preview hash can be silently dropped, stripped, or ignored. When that happens, preview falls back to published content with no error — the failure is invisible. This chapter ensures the hash survives every layer.
+**Why this matters:** Each layer between the browser and Contentstack (API proxies, BFFs, edge middleware, database caches) can silently drop the preview hash. When that happens, preview falls back to published content with no error.
 
 ---
 
@@ -50,7 +50,7 @@ export async function GET(request: Request) {
   const content_type_uid = searchParams.get("content_type_uid");
   const pageUrl = searchParams.get("url");
   const live_preview = searchParams.get("live_preview");
-  // Optional; stack may send it for time-aligned preview — forward when present
+  // Optional; stack may send it for time-aligned preview  - forward when present
   const preview_timestamp = searchParams.get("preview_timestamp");
 
   // Pick the right API based on preview context
@@ -130,16 +130,16 @@ export default async function Home() {
 }
 ```
 
-The `<Preview>` component initializes the Live Preview SDK with `ssr: false`, subscribes to `onEntryChange`, and refetches through the same `/api/middleware` route on every edit. The `<Page>` component is a static renderer — no SDK, no subscriptions.
+The `<Preview>` component initializes the Live Preview SDK with `ssr: false`, subscribes to `onEntryChange`, and refetches through the same `/api/middleware` route on every edit. The `<Page>` component is a static renderer  - no SDK, no subscriptions.
 
 This works because the API route doesn't care who's calling it. The preview component calls it with a hash and gets draft content. The server component calls it without a hash and gets published content. Same route, same logic, different results.
 
 ### Why This Pattern
 
-- **Tokens never reach the browser** — preview tokens and delivery tokens stay in server-side environment variables
-- **Single place for endpoint switching** — one `if (live_preview)` check instead of scattered logic
-- **Works with any rendering strategy** — CSR, SSR, or both through the same API route
-- **Easy to extend** — add logging, rate limiting, or response transformation in one place
+- **Tokens never reach the browser**  - preview tokens and delivery tokens stay in server-side environment variables
+- **Single place for endpoint switching**  - one `if (live_preview)` check instead of scattered logic
+- **Works with any rendering strategy**  - CSR, SSR, or both through the same API route
+- **Easy to extend**  - add logging, rate limiting, or response transformation in one place
 
 ## Backend-for-Frontend (BFF) Architecture
 
@@ -167,7 +167,7 @@ BFF detects preview and switches API:
 ```javascript
 app.get('/api/page/:slug', async (req, res) => {
   const livePreviewHash = req.query.live_preview;
-  const client = createContentstackClient(livePreviewHash); // Request-scoped preview config (see SSR chapter)
+  const client = createContentstackClient(livePreviewHash); // Must be request-scoped (see Chapter 3 for why)
   const data = await client.getPageBySlug(req.params.slug);
 
   if (livePreviewHash) {
@@ -360,10 +360,10 @@ When Live Preview isn't working in a complex architecture, trace the hash throug
 
 ## Key Takeaways
 
-- The core rule is simple: preview context must travel with the request, end to end. Every layer between the browser and the Contentstack API must forward the hash.
-- An API route / BFF proxy centralizes token management (keeping preview tokens server-side) and endpoint switching (one `if (live_preview)` check instead of scattered logic).
-- Edge middleware is a common source of silent hash loss. URL normalization, parameter stripping, and authentication redirects can all drop the `live_preview` query parameter.
-- Preview content must never be written to a shared database or persistent cache. It's session-scoped and transient — storing it means other users might see drafts or stale sessions.
+- Preview context must travel end to end. Every layer must forward the hash.
+- A BFF/API proxy centralizes token management and endpoint switching in one place.
+- Edge middleware is a common source of silent hash loss (URL normalization, parameter stripping, auth redirects).
+- Never write preview content to a shared database or persistent cache.
 
 ## Check Your Understanding
 
@@ -380,9 +380,9 @@ Map the path the live preview hash takes through your own architecture, from the
 3. Could this layer silently drop the hash? (redirects, URL rewrites, parameter stripping)
 4. Does this layer cache responses? Is caching bypassed when the hash is present?
 
-If you find a gap — a layer that doesn't forward the hash or doesn't bypass caching — that's where your preview will break.
+If you find a gap  - a layer that doesn't forward the hash or doesn't bypass caching  - that's where your preview will break.
 
 ## What's Next
 
-- **To add click-to-edit and Visual Builder capabilities**: [Edit Tags and Visual Builder](./Edit%20Tags%20and%20Visual%20Builder.md)
-- **To systematically debug preview issues**: [Debugging and Best Practices](./Debugging%2C%20Pitfalls%2C%20and%20Best%20Practices.md)
+- **To add click-to-edit and Visual Builder capabilities**: [Edit Tags and Visual Builder](./06-Edit%20Tags%20and%20Visual%20Builder.md)
+- **To systematically debug preview issues**: [Debugging and Best Practices](./07-Debugging%2C%20Pitfalls%2C%20and%20Best%20Practices.md)

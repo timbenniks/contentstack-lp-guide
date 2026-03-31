@@ -130,9 +130,9 @@ Your rendering strategy determines how Live Preview operates. Pick your chapter:
 
 | Strategy | How it handles "show me the new state"                 | SDK config   | Chapter                                                                       |
 | -------- | ------------------------------------------------------ | ------------ | ----------------------------------------------------------------------------- |
-| **CSR**  | Refetch data in the browser, re-render in place        | `ssr: false` | [Client-Side Rendering](./Client-Side%20Rendering.md)                         |
-| **SSR**  | Reload the iframe, re-render on the server             | `ssr: true`  | [Server-Side Rendering](./Live%20Preview%20with%20Server-Side%20Rendering.md) |
-| **SSG**  | Bypass static output via preview mode, behave like SSR | `ssr: true`  | [Static Site Generation](./Static%20Site%20Generation%20and%20Preview.md)     |
+| **CSR**  | Refetch data in the browser, re-render in place        | `ssr: false` | [Client-Side Rendering](./02-Client-Side%20Rendering.md)                         |
+| **SSR**  | Reload the iframe, re-render on the server             | `ssr: true`  | [Server-Side Rendering](./03-Live%20Preview%20with%20Server-Side%20Rendering.md) |
+| **SSG**  | Bypass static output via preview mode, behave like SSR | `ssr: true`  | [Static Site Generation](./04-Static%20Site%20Generation%20and%20Preview.md)     |
 
 
 **Not sure which you're using?**
@@ -147,22 +147,22 @@ Your rendering strategy determines how Live Preview operates. Pick your chapter:
 
 ### Foundations
 
-- [1. How Live Preview Works](./How%20Live%20Preview%20Works.md) — The mental model, architecture, session lifecycle, and APIs
+- [1. How Live Preview Works](./01-How%20Live%20Preview%20Works.md) - The mental model, architecture, session lifecycle, and APIs
 
 ### Rendering Strategies
 
-- [2. Client-Side Rendering](./Client-Side%20Rendering.md) — SDK setup, subscriptions, and refetch patterns for SPAs
-- [3. Server-Side Rendering](./Live%20Preview%20with%20Server-Side%20Rendering.md) — Reload-based preview, request-scoped clients, hash propagation
-- [4. Static Site Generation](./Static%20Site%20Generation%20and%20Preview.md) — Preview mode, framework escape hatches
-- [5. Middleware and Complex Architectures](./Middleware%20and%20Database-Backed%20Architectures.md) — BFF, edge middleware, database caching
+- [2. Client-Side Rendering](./02-Client-Side%20Rendering.md)  - SDK setup, subscriptions, and refetch patterns for SPAs
+- [3. Server-Side Rendering](./03-Live%20Preview%20with%20Server-Side%20Rendering.md)  - Reload-based preview, request-scoped clients, hash propagation
+- [4. Static Site Generation](./04-Static%20Site%20Generation%20and%20Preview.md)  - Preview mode, framework escape hatches
+- [5. Middleware and Complex Architectures](./05-Middleware%20and%20Database-Backed%20Architectures.md)  - BFF, edge middleware, database caching
 
 ### Advanced Features
 
-- [6. Edit Tags and Visual Builder](./Edit%20Tags%20and%20Visual%20Builder.md) — Click-to-edit, field paths, Visual Builder integration
+- [6. Edit Tags and Visual Builder](./06-Edit%20Tags%20and%20Visual%20Builder.md)  - Click-to-edit, field paths, Visual Builder integration
 
 ### Operations
 
-- [7. Debugging and Best Practices](./Debugging%2C%20Pitfalls%2C%20and%20Best%20Practices.md) — Systematic debugging, common pitfalls, checklists
+- [7. Debugging and Best Practices](./07-Debugging%2C%20Pitfalls%2C%20and%20Best%20Practices.md)  - Systematic debugging, common pitfalls, checklists
 
 ## Prerequisites
 
@@ -175,17 +175,10 @@ Before diving in, you should have:
 
 ### Enabling Live Preview in Your Stack
 
-1. Navigate to Settings > Live Preview in your stack
-2. Select the "Enable Live Preview" checkbox
-3. Select the Default Preview Environment from the dropdown
-4. Navigate to Settings > Environments > select your environment
-5. Add the Base URL for each locale (e.g., `https://localhost:3000` for development)
-6. Save your changes
+Enable Live Preview in your stack settings, set a default preview environment, and add base URLs for each locale in your environment configuration. For step-by-step instructions, see the [official setup guide](https://www.contentstack.com/docs/developers/set-up-live-preview/set-up-live-preview-for-your-website).
 
 Optionally, enable the "Display Setup Status" toggle for real-time configuration feedback during setup. Enable "Always Open in New Tab" if you run SDK v4.0.0+ to preview outside the iframe.
 
-If you're starting from scratch, the [Contentstack documentation](https://www.contentstack.com/docs/developers/set-up-live-preview) includes quickstart guides for common frameworks.
-
 ## What's Next
 
-You now have the prerequisites in place and basic configuration done. Next, lets take a quick deep dive into how Live Preview works and how it works with different rendering strategies. Proceed to [How Live Preview Works](./How%20Live%20Preview%20Works.md) to get started.
+You now have the prerequisites in place and basic configuration done. Next, lets take a quick deep dive into how Live Preview works and how it works with different rendering strategies. Proceed to [How Live Preview Works](./01-How%20Live%20Preview%20Works.md) to get started.

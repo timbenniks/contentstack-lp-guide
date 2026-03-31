@@ -1,12 +1,13 @@
 # How Live Preview Works
 
 > **What you'll be able to do after this chapter:**
+>
 > - Describe the three participants in a Live Preview session and the role each plays
 > - Explain why change events carry no payload and why your site must always refetch
 > - Trace the full lifecycle of a preview hash from session creation to invalidation
 > - Distinguish Preview API from Delivery API and know when to use each
 
-**Why this matters:** Most Live Preview bugs trace back to a misunderstanding of the architecture. Previews that show published content instead of drafts, sessions that silently break on navigation, caching layers that serve stale data — these all stem from the same root cause: not knowing how the pieces fit together. The mental model in this chapter prevents that entire class of problems.
+**Why this matters:** Most Live Preview bugs trace back to a misunderstanding of the architecture. The mental model in this chapter prevents an entire class of problems: stale previews, broken navigation, cached drafts.
 
 ---
 
@@ -33,7 +34,7 @@ An editor changes the About page headline from "Our Story" to "Our Mission" and 
 1. **Session establishment**: The CMS creates a Live Preview session and generates a unique hash
 2. **Site loading**: Your site loads with the hash in the URL as a query parameter, along with content type UID, entry UID, and locale
 3. **Handshake**: The SDK sends an initialization message to the CMS, the CMS acknowledges, and the communication channel opens
-4. **Change notification**: The CMS emits a "content changed" event. This event does **not** contain the updated content — it only signals that something changed
+4. **Change notification**: The CMS emits a "content changed" event. This event does **not** contain the updated content - it only signals that something changed
 5. **Refetch and re-render**: Your site fetches draft content from the Preview API using the current hash, then re-renders
 
 ![Live Preview three-lane sequence diagram](./diagrams/live-preview-sequence.svg)
@@ -56,7 +57,7 @@ sequenceDiagram
   Note over Site: 6. Site re-renders<br/>Updated preview
 ```
 
-Every edit follows this same pattern. The simplicity is deliberate — it makes the system predictable across frameworks.
+Every edit follows this same pattern. The simplicity is deliberate - it makes the system predictable across frameworks.
 
 ### Two Architectural Consequences
 
@@ -102,21 +103,7 @@ Preview services serve unpublished content with special authentication:
 - **Preview token**: A credential from your stack settings that authorizes access to draft content
 - **Live preview hash**: The session identifier that scopes which draft content you can access
 
-**REST Preview Endpoints by Region:**
-| Region | Endpoint |
-|--------|----------|
-| North America | `rest-preview.contentstack.com` |
-| AWS EU | `eu-rest-preview.contentstack.com` |
-| Azure NA | `azure-na-rest-preview.contentstack.com` |
-| Azure EU | `azure-eu-rest-preview.contentstack.com` |
-| GCP NA | `gcp-na-rest-preview.contentstack.com` |
-| GCP EU | `gcp-eu-rest-preview.contentstack.com` |
-
-**GraphQL Preview Endpoints:**
-| Region | Endpoint |
-|--------|----------|
-| North America | `graphql-preview.contentstack.com` |
-| AWS EU | `eu-graphql-preview.contentstack.com` |
+The default REST preview endpoint is `rest-preview.contentstack.com` (North America). For other regions (EU, Azure, GCP), see the [region-specific endpoints](https://www.contentstack.com/docs/developers/contentstack-regions/api-endpoints).
 
 ### 5. Delivery Services (The Published Data Source)
 
@@ -141,7 +128,9 @@ const stack = contentstack.stack({
 });
 
 // Component 3: The SDK (Mediator)
-import ContentstackLivePreview, { IStackSdk } from "@contentstack/live-preview-utils";
+import ContentstackLivePreview, {
+  IStackSdk,
+} from "@contentstack/live-preview-utils";
 ContentstackLivePreview.init({
   ssr: false, // CSR loop: subscribe and refetch (see SSR chapter for reload-based flow)
   mode: "builder",
@@ -152,9 +141,11 @@ ContentstackLivePreview.init({
 
 // Component 2: Your Website (Renderer)
 ContentstackLivePreview.onEntryChange(async () => {
-  // Event has no payload — always query Preview API again for authoritative draft
+  // Event has no payload  - always query Preview API again for authoritative draft
   const result = await stack
-    .contentType("page").entry().query()
+    .contentType("page")
+    .entry()
+    .query()
     .where("url", QueryOperation.EQUALS, "/")
     .find();
   renderPage(result.entries?.[0]);
@@ -185,7 +176,7 @@ The Preview API and Delivery API share the same REST routes, GraphQL schemas, qu
 
 **Delivery API** serves published content. Requires a delivery token. Fully cacheable. Use for production.
 
-**Preview API** serves draft content including unsaved changes. Requires both a preview token AND the live preview hash. **Never cacheable** — the same request can return different content milliseconds later as the editor types. Use only during active preview sessions.
+**Preview API** serves draft content including unsaved changes. Requires both a preview token AND the live preview hash. **Never cacheable** - the same request can return different content milliseconds later as the editor types. Use only during active preview sessions.
 
 ![Preview vs Delivery API split](./diagrams/preview-vs-delivery.svg)
 
@@ -199,18 +190,14 @@ flowchart TB
   decision -->|No| delivery
 ```
 
-This distinction is a **trust boundary**. Mixing preview and delivery requests in the same flow produces a page with inconsistent data — part published, part draft — that matches neither the editor's view nor the production site.
+This distinction is a **trust boundary**. Mixing preview and delivery requests in the same flow produces a page with inconsistent data - part published, part draft - that matches neither the editor's view nor the production site.
 
 ### Authentication
 
-```javascript
-// Delivery API: published content only
-{
-  "api_key": "your_stack_api_key",
-  "access_token": "your_delivery_token"
-}
+The Preview API requires two additional credentials on top of the standard API key: a `preview_token` (from your stack settings) and the `live_preview` hash (from the current session). Both must be present for draft content to be returned.
 
-// Preview API: adds preview credential + session hash (both required for drafts)
+```javascript
+// Preview API headers: standard credentials + preview-specific ones
 {
   "api_key": "your_stack_api_key",
   "access_token": "your_delivery_token",
@@ -228,22 +215,22 @@ function getContentstackConfig(previewHash) {
   const baseConfig = {
     apiKey: process.env.CONTENTSTACK_API_KEY,
     deliveryToken: process.env.CONTENTSTACK_DELIVERY_TOKEN,
-    environment: process.env.CONTENTSTACK_ENVIRONMENT
+    environment: process.env.CONTENTSTACK_ENVIRONMENT,
   };
 
   if (previewHash) {
     return {
       ...baseConfig,
-      host: 'rest-preview.contentstack.com',
+      host: "rest-preview.contentstack.com",
       previewToken: process.env.CONTENTSTACK_PREVIEW_TOKEN,
-      livePreviewHash: previewHash
-      // No CDN or app cache — responses are per-session and change continuously
+      livePreviewHash: previewHash,
+      // No CDN or app cache  - responses are per-session and change continuously
     };
   }
 
   return {
     ...baseConfig,
-    host: 'cdn.contentstack.io'
+    host: "cdn.contentstack.io",
     // Standard delivery: cache-friendly
   };
 }
@@ -290,10 +277,10 @@ flowchart LR
   load["2. Load<br/>Site loads with hash + params"]
   handshake["3. Handshake<br/>SDK init<br/>init / init-ack"]
   steady["4. Steady<br/>Events -> refetch<br/>Re-render loop"]
-  end["5. End<br/>Editor closes<br/>Hash invalid"]
+  finish["5. End<br/>Editor closes<br/>Hash invalid"]
   hash["Hash behavior<br/>- Session-scoped<br/>- Can rotate<br/>- Never persisted"]
 
-  create --> load --> handshake --> steady --> end
+  create --> load --> handshake --> steady --> finish
   steady -.-> hash
 ```
 
@@ -313,21 +300,22 @@ Live Preview uses the browser's `postMessage` API for cross-origin messaging bet
 
 **`init-ack`** (CMS → Site): Confirms the channel is open and the handshake is complete.
 
-**`client-data-send`** (CMS → Site): Emitted when content changes. Does **not** contain the actual content — only signals that something changed. Your site responds by refetching.
+**`client-data-send`** (CMS → Site): Emitted when content changes. Does **not** contain the actual content - only signals that something changed. Your site responds by refetching.
 
 ### Events Carry Intent, Not Payload
 
-This is a critical design principle. When you receive a change event, it means "something changed" — not "here's the new content." Your site decides what to fetch. Your data flow stays deterministic. Your fetch layer is the source of truth.
+This is a critical design principle. When you receive a change event, it means "something changed" - not "here's the new content." Your site decides what to fetch. Your data flow stays deterministic. Your fetch layer is the source of truth.
 
 Attempting to extract field changes or apply deltas from events will fail. The events don't contain that information.
 
 ## Iframe vs New Tab
 
-By default, Live Preview loads your site in an iframe within the CMS entry editor. Starting with SDK v4.0.0, Contentstack also supports opening the preview in a standalone browser tab — enable "Always Open in New Tab" in Settings > Live Preview.
+By default, Live Preview loads your site in an iframe within the CMS entry editor. Starting with SDK v4.0.0, Contentstack also supports opening the preview in a standalone browser tab - enable "Always Open in New Tab" in Settings > Live Preview.
 
 The new-tab mode bypasses iframe restrictions (SSO, OAuth, `X-Frame-Options`, strict CSP headers). Both modes use the same `postMessage` communication. The SDK detects the context and adapts.
 
 You can check the current context through `ContentstackLivePreview.config.windowType`:
+
 - `"preview"`: iframe-based Live Preview or Timeline preview
 - `"builder"`: Visual Builder iframe
 - `"independent"`: direct browser access
@@ -336,11 +324,11 @@ You can check the current context through `ContentstackLivePreview.config.window
 
 ## Key Takeaways
 
-- Live Preview is a three-party system: the CMS signals changes, your site refetches and re-renders, and the Preview API serves session-scoped draft content.
-- Change events carry intent, not payload. Your site always refetches from the Preview API rather than extracting content from events.
-- The live preview hash is runtime state — short-lived, session-scoped, and never cacheable. Treat it like a request token, not a configuration value.
-- The Preview API and Delivery API share the same interface but serve different content. Mixing them in a single page produces inconsistent data.
-- The SDK is a thin mediator. It manages the postMessage handshake and session state but does not fetch content, manage application state, or render anything.
+- Three-party system: CMS signals changes, your site refetches, Preview API serves drafts.
+- Events carry intent, not payload. Always refetch; never extract content from events.
+- The hash is runtime state: session-scoped, never cacheable, never persisted.
+- Preview API and Delivery API share the same interface but serve different content. Don't mix them.
+- The SDK is a thin mediator: postMessage handshake and session state only.
 
 ## Check Your Understanding
 
@@ -353,6 +341,6 @@ You can check the current context through `ContentstackLivePreview.config.window
 
 You now have the architectural foundation. The next step is applying it to your specific rendering strategy.
 
-- **If your app fetches content in the browser** (SPAs, client-side React/Vue): [Client-Side Rendering](./Client-Side%20Rendering.md)
-- **If your server renders HTML per request**: [Server-Side Rendering](./Live%20Preview%20with%20Server-Side%20Rendering.md)
-- **If your pages are built at deploy time**: [Static Site Generation](./Static%20Site%20Generation%20and%20Preview.md)
+- **If your app fetches content in the browser** (SPAs, client-side React/Vue): [Client-Side Rendering](./02-Client-Side%20Rendering.md)
+- **If your server renders HTML per request**: [Server-Side Rendering](./03-Live%20Preview%20with%20Server-Side%20Rendering.md)
+- **If your pages are built at deploy time**: [Static Site Generation](./04-Static%20Site%20Generation%20and%20Preview.md)

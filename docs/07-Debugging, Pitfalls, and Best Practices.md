@@ -5,7 +5,7 @@
 > - Identify the five common failure modes by their symptoms and trace each to its root cause
 > - Apply the preview checklist to any new page or component to catch issues before they reach production
 
-**Why this matters:** When Live Preview breaks, the symptom — stale content, no updates, wrong entry — rarely points directly to the cause. Without a systematic approach, debugging becomes guesswork: restarting servers, clearing caches, and toggling configuration until something works (or doesn't). This chapter gives you a repeatable diagnostic process that isolates the problem layer by layer.
+**Why this matters:** Live Preview symptoms (stale content, no updates, wrong entry) rarely point directly to the cause. This chapter gives you a repeatable diagnostic process that isolates the problem layer by layer.
 
 ---
 
@@ -19,7 +19,7 @@ Most Live Preview problems fall into a small number of categories. A systematic 
 
 **Causes**: Hash not extracted from URL. Hash not passed to content fetching. Navigation loses hash. Middleware strips query parameters. Redirects drop the hash.
 
-**Investigation**: Check the URL in the preview iframe — is `live_preview=...` present? Check network requests — are they going to preview or delivery endpoints?
+**Investigation**: Check the URL in the preview iframe  - is `live_preview=...` present? Check network requests  - are they going to preview or delivery endpoints?
 
 ### 2. Cached Preview Responses
 
@@ -27,7 +27,7 @@ Most Live Preview problems fall into a small number of categories. A systematic 
 
 **Causes**: CDN caching preview responses. Application-level caching not bypassed. Database persisting preview content.
 
-**Investigation**: Check response headers for `Cache-Control`. Check your caching logic — does it check for the hash before caching?
+**Investigation**: Check response headers for `Cache-Control`. Check your caching logic  - does it check for the hash before caching?
 
 ### 3. Shared SDK Instances in SSR
 
@@ -51,7 +51,7 @@ Most Live Preview problems fall into a small number of categories. A systematic 
 
 **Causes**: Using delivery endpoint when preview needed. Preview token not included. Hash not included.
 
-**Investigation**: Check network requests — what hostname is being called? What headers are included?
+**Investigation**: Check network requests  - what hostname is being called? What headers are included?
 
 ## Systematic Debugging
 
@@ -102,11 +102,11 @@ Make an edit. If no log appears: check the handshake completed, verify the `ssr`
 
 ### Step 4: Is the Correct API Being Used?
 
-Log your fetch calls — verify the endpoint is `rest-preview.contentstack.com` (or regional equivalent) and headers include `preview_token` and `live_preview`.
+Log your fetch calls  - verify the endpoint is `rest-preview.contentstack.com` (or regional equivalent) and headers include `preview_token` and `live_preview`.
 
 ### Step 5: Is Caching Disabled?
 
-Check response headers for `Cache-Control: no-store`. Check your code — does any caching logic run when the hash is present?
+Check response headers for `Cache-Control: no-store`. Check your code  - does any caching logic run when the hash is present?
 
 ### Step 6: Is the New Data Being Rendered?
 
@@ -138,7 +138,7 @@ If fetches return correct data but the UI doesn't update: check state updates, v
 
 - Treat preview as **runtime state**, not environment config
 - Isolate preview logic so it's easy to reason about
-- Prefer determinism over optimization — refetch everything rather than selectively
+- Prefer determinism over optimization  - refetch everything rather than selectively
 - Document your preview architecture for future maintainers
 
 ### Preview Checklist
@@ -181,17 +181,17 @@ It checks for:
 
 ## Key Takeaways
 
-- Most Live Preview failures fall into five categories: missing hash, cached preview responses, shared SDK instances, incorrect SDK configuration, and wrong API endpoint. Knowing these categories narrows the search space immediately.
-- Debug systematically by following the 6-step sequence: hash in URL, SDK initialization, change events firing, correct API endpoint, caching disabled, data rendered. Each step eliminates a category of causes.
-- Treat preview as runtime state, not environment configuration. Isolate preview logic so it's easy to reason about, and prefer deterministic refetching over selective optimizations.
-- Use the preview checklist for every new page or component. It's faster to verify six things upfront than to debug a broken preview after deployment.
+- Five failure categories: missing hash, cached responses, shared SDK instances, wrong SDK config, wrong API endpoint.
+- Debug in order: hash in URL, SDK init, events firing, correct API, caching disabled, data rendered.
+- Treat preview as runtime state, not environment config.
+- Use the checklist for every new page. Six checks upfront beats debugging after deployment.
 
 ## Wrap-Up: Where You Are Now
 
 You've worked through the full Live Preview guide. Here's what you now have:
 
 - **A mental model** of how the CMS, your site, and the Preview API coordinate to show draft content in real time (Chapter 1)
-- **Implementation patterns** for your specific rendering strategy — CSR, SSR, or SSG — and the configuration each requires (Chapters 2-4)
+- **Implementation patterns** for your specific rendering strategy  - CSR, SSR, or SSG  - and the configuration each requires (Chapters 2-4)
 - **Architectural patterns** for routing preview context through middleware, BFFs, and database caches without losing the hash (Chapter 5)
 - **Edit tag and Visual Builder knowledge** to transform your preview from a passive display into an interactive editing surface (Chapter 6)
 - **A diagnostic process** for when things break, plus a checklist for every new implementation (this chapter)
