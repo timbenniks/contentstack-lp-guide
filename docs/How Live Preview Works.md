@@ -351,7 +351,7 @@ You can check the current context through `ContentstackLivePreview.config.window
 
 ## What's Next
 
-You now have the architectural foundation. The next step is applying it to your specific rendering strategy:
+You now have the architectural foundation. The next step is applying it to your specific rendering strategy.
 
 - **If your app fetches content in the browser** (SPAs, client-side React/Vue): [Client-Side Rendering](./Client-Side%20Rendering.md)
 - **If your server renders HTML per request**: [Server-Side Rendering](./Live%20Preview%20with%20Server-Side%20Rendering.md)
