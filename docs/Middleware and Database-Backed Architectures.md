@@ -19,6 +19,18 @@ Many production systems don't fetch content directly from Contentstack in the fr
 
 ![Preview context flow through BFF and middleware](./diagrams/preview-context-flow.svg)
 
+```mermaid
+flowchart LR
+  frontend["Frontend<br/>Hash in URL"]
+  middleware["BFF / Middleware<br/>Preserve hash"]
+  contentstack["Contentstack<br/>Preview or delivery"]
+  rule1["Rule: Decide preview vs delivery where data is fetched."]
+  rule2["If hash is present, bypass caches and databases."]
+
+  frontend --> middleware --> contentstack
+  middleware -.-> rule1 -.-> rule2
+```
+
 ## API Route as Content Proxy
 
 Instead of calling Contentstack directly from the browser or server components, route all content requests through your own API endpoint. This keeps tokens server-side, centralizes endpoint switching, and lets the same fetch function work for both preview and production.

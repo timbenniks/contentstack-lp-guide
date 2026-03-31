@@ -32,6 +32,16 @@ When preview mode is active, static files are bypassed and requests are handled 
 
 ![SSG production vs preview mode](./diagrams/ssg-preview-mode.svg)
 
+```mermaid
+flowchart TB
+  decision{"Preview mode active?"}
+  production["Production (SSG)<br/>Build time fetch<br/>Static HTML<br/>CDN cached<br/>No draft content"]
+  preview["Preview Mode<br/>Static files bypassed<br/>Dynamic render (SSR)<br/>Preview API + hash<br/>No caching"]
+
+  decision -->|No| production
+  decision -->|Yes| preview
+```
+
 ## Framework Preview Modes
 
 ### Next.js (App Router with Draft Mode)

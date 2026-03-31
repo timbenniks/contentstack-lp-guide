@@ -59,6 +59,19 @@ When Live Preview isn't working, walk through these steps in order:
 
 ![Live Preview debugging flowchart](./diagrams/debugging-flowchart.svg)
 
+```mermaid
+flowchart LR
+  hash{"Hash in URL?"}
+  sdk{"SDK initialized?"}
+  events{"Events firing?"}
+  api{"Preview API?"}
+  caching{"Caching disabled?"}
+  rerender{"UI re-render?"}
+
+  hash --> sdk --> events
+  hash --> api --> caching --> rerender
+```
+
 ### Step 1: Is the Hash in the URL?
 
 Open devtools, find the preview iframe, check its `src` for `live_preview=...`. If missing, check Stack Settings > Live Preview and Environment Base URL configuration. Enable "Display Setup Status" for real-time feedback.

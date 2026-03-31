@@ -38,6 +38,24 @@ An editor changes the About page headline from "Our Story" to "Our Mission" and 
 
 ![Live Preview three-lane sequence diagram](./diagrams/live-preview-sequence.svg)
 
+```mermaid
+sequenceDiagram
+  participant CMS as Contentstack CMS
+  participant Site as Website
+  participant Preview as Preview Services
+
+  Note over CMS: 1. CMS creates session + hash
+  CMS->>Site: Loads site with hash
+  Note over Site: 2. Site initializes SDK<br/>Handshake ready
+  Note over CMS: 3. CMS signals change event
+  CMS->>Site: postMessage
+  Note over Site: 4. Site refetches draft data
+  Site->>Preview: Preview API request
+  Note over Preview: 5. Preview services return draft
+  Preview-->>Site: Draft response
+  Note over Site: 6. Site re-renders<br/>Updated preview
+```
+
 Every edit follows this same pattern. The simplicity is deliberate — it makes the system predictable across frameworks.
 
 ### Two Architectural Consequences
@@ -145,6 +163,22 @@ ContentstackLivePreview.onEntryChange(async () => {
 
 ![Live Preview components and boundaries](./diagrams/live-preview-components.svg)
 
+```mermaid
+flowchart TB
+  cms["Contentstack CMS<br/>- Entry editor<br/>- Session + hash<br/>- Change events"]
+  sdk["Live Preview SDK<br/>- Handshake<br/>- Event bridge<br/>- Hash updates"]
+  site["Your Website<br/>- Render content<br/>- Refetch on event<br/>- Apply edit tags"]
+  preview["Preview Services<br/>Draft content<br/>Requires preview token + hash<br/>No caching"]
+  delivery["Delivery Services<br/>Published content<br/>Delivery token<br/>Cacheable"]
+
+  cms -->|postMessage| sdk
+  sdk -->|Handshake / hash updates| site
+  site -->|Preview requests| preview
+  site -->|Delivery requests| delivery
+  sdk -.->|Preview context| preview
+  sdk -.->|Production context| delivery
+```
+
 ## Preview API vs Delivery API
 
 The Preview API and Delivery API share the same REST routes, GraphQL schemas, query structure, and response shape. The difference is what content each serves and what authentication each requires.
@@ -154,6 +188,16 @@ The Preview API and Delivery API share the same REST routes, GraphQL schemas, qu
 **Preview API** serves draft content including unsaved changes. Requires both a preview token AND the live preview hash. **Never cacheable** — the same request can return different content milliseconds later as the editor types. Use only during active preview sessions.
 
 ![Preview vs Delivery API split](./diagrams/preview-vs-delivery.svg)
+
+```mermaid
+flowchart TB
+  decision{"Hash present?"}
+  preview["Preview API<br/>Content: Draft + unpublished<br/>Auth: Preview token + hash<br/>Caching: Never<br/>Scope: Session-scoped"]
+  delivery["Delivery API<br/>Content: Published<br/>Auth: Delivery token<br/>Caching: Safe<br/>Scope: Global"]
+
+  decision -->|Yes| preview
+  decision -->|No| delivery
+```
 
 This distinction is a **trust boundary**. Mixing preview and delivery requests in the same flow produces a page with inconsistent data — part published, part draft — that matches neither the editor's view nor the production site.
 
@@ -239,6 +283,19 @@ The hash is **runtime state**, not a stack setting or environment variable. It's
 **Session end**: Editor closes the entry. Hash becomes invalid. Preview API requests with the old hash fail.
 
 ![Live Preview session lifecycle timeline](./diagrams/live-preview-lifecycle.svg)
+
+```mermaid
+flowchart LR
+  create["1. Create<br/>CMS creates session<br/>Hash generated"]
+  load["2. Load<br/>Site loads with hash + params"]
+  handshake["3. Handshake<br/>SDK init<br/>init / init-ack"]
+  steady["4. Steady<br/>Events -> refetch<br/>Re-render loop"]
+  end["5. End<br/>Editor closes<br/>Hash invalid"]
+  hash["Hash behavior<br/>- Session-scoped<br/>- Can rotate<br/>- Never persisted"]
+
+  create --> load --> handshake --> steady --> end
+  steady -.-> hash
+```
 
 The session outlives navigation within the preview iframe (clicking links), but it does not outlive the editor's engagement with the entry.
 

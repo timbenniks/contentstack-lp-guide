@@ -32,6 +32,17 @@ Browser loads HTML/JS → App boots → SDK initializes → Fetch preview conten
 
 ![CSR preview event loop](./diagrams/csr-event-loop.svg)
 
+```mermaid
+flowchart TB
+  editor["Editor types"]
+  sdk["SDK event"]
+  refetch["Refetch draft"]
+  state["Update state"]
+  rerender["Re-render"]
+
+  editor --> sdk --> refetch --> state --> rerender --> refetch
+```
+
 Everything after SDK initialization happens in the same runtime. Your app never reloads. State management, component trees, and event listeners all stay intact.
 
 If you want to see this in a complete project, the kickstart's `Preview.tsx` from the introduction is a full CSR Live Preview implementation in under 20 lines.

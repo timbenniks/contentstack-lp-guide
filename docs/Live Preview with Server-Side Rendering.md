@@ -48,6 +48,18 @@ Every SSR implementation must satisfy these requirements:
 
 ![SSR preview update cycle](./diagrams/ssr-update-cycle.svg)
 
+```mermaid
+flowchart TB
+  editor["Editor changes content"]
+  sdk["SDK signals reload"]
+  iframe["Iframe reloads"]
+  request["Server request"]
+  fetch["Fetch draft data"]
+  render["Render HTML"]
+
+  editor --> sdk --> iframe --> request --> fetch --> render
+```
+
 ## First Request Correctness
 
 The initial request already contains the hash. Your server must detect this immediately and fetch draft content.

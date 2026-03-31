@@ -151,6 +151,25 @@ function HeroBlock({ block, basePath }) {
 
 ![Nested edit tag paths](./diagrams/edit-tags-nested-paths.svg)
 
+```mermaid
+flowchart LR
+  subgraph model["Content Model"]
+    cm1["page_components[0].hero.headline"]
+    cm2["page_components[1].features.items[0].title"]
+    cm3["page_components[1].features.items[1].title"]
+  end
+
+  subgraph tags["Edit Tags"]
+    et1["page.{uid}.en-us.page_components.0.hero.headline"]
+    et2["page.{uid}.en-us.page_components.1.features.items.0.title"]
+    et3["page.{uid}.en-us.page_components.1.features.items.1.title"]
+  end
+
+  cm1 --> et1
+  cm2 --> et2
+  cm3 --> et3
+```
+
 ### Repeated Items Within Blocks
 
 When blocks contain arrays, you need nested indexes:
@@ -247,6 +266,15 @@ Visual Builder transforms Live Preview from a passive display into an interactiv
 ```
 
 ![Visual Builder layers](./diagrams/visual-builder-layers.svg)
+
+```mermaid
+flowchart TB
+  builder["Visual Builder Layer<br/>Scans DOM for edit tags, builds click targets"]
+  preview["Live Preview Layer<br/>Session, events, preview content updates"]
+  website["Your Website<br/>Renders content with data-cslp attributes"]
+
+  builder --> preview --> website
+```
 
 ### Enabling Visual Builder
 
