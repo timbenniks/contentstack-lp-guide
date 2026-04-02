@@ -163,6 +163,7 @@ Your rendering strategy determines how Live Preview operates. Pick your chapter:
 ### Operations
 
 - [7. Debugging and Best Practices](./07-Debugging%2C%20Pitfalls%2C%20and%20Best%20Practices.md)  - Systematic debugging, common pitfalls, checklists
+- [8. AI Agent Playbook](./08-AI%20Agent%20Playbook%20for%20Live%20Preview%20and%20Visual%20Builder.md)  - A troubleshooting runbook for Codex, Claude Code, and other agents diagnosing Live Preview or Visual Builder issues
 
 ## Prerequisites
 

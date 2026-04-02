@@ -188,13 +188,15 @@ It checks for:
 
 ## Wrap-Up: Where You Are Now
 
-You've worked through the full Live Preview guide. Here's what you now have:
+You've worked through the full implementation guide. Here's what you now have:
 
 - **A mental model** of how the CMS, your site, and the Preview API coordinate to show draft content in real time (Chapter 1)
 - **Implementation patterns** for your specific rendering strategy  - CSR, SSR, or SSG  - and the configuration each requires (Chapters 2-4)
 - **Architectural patterns** for routing preview context through middleware, BFFs, and database caches without losing the hash (Chapter 5)
 - **Edit tag and Visual Builder knowledge** to transform your preview from a passive display into an interactive editing surface (Chapter 6)
 - **A diagnostic process** for when things break, plus a checklist for every new implementation (this chapter)
+
+One final chapter translates this guide into an operational runbook for AI coding agents. If you want Codex, Claude Code, or another agent to debug a broken setup methodically, continue to [AI Agent Playbook for Live Preview and Visual Builder](./08-AI%20Agent%20Playbook%20for%20Live%20Preview%20and%20Visual%20Builder.md).
 
 The concepts are consistent across the guide because the architecture is consistent: the CMS signals, your site refetches, the Preview API serves drafts, and the hash scopes everything to a session. Every chapter is a different angle on the same system.
 

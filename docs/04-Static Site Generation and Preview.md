@@ -185,15 +185,15 @@ This fails because:
 3. **Initialize the SDK client-side** with `ssr: true`
 4. **In preview mode**, fetch from Preview API with the hash
 
-```javascript
-// Stack Settings > Live Preview
-// Base URL: https://your-site.com/api/preview?slug={{entry.url}}
+```mermaid
+flowchart TB
+  config["Stack Settings > Live Preview<br/>Base URL: your-site.com/api/preview?slug=&#123;&#123;entry.url&#125;&#125;"]
+  construct["CMS constructs URL<br/>/api/preview?slug=/about"]
+  enable["Preview endpoint enables preview mode"]
+  redirect["Redirect to /about with preview cookie"]
+  render["Page renders dynamically with draft content"]
 
-// Flow:
-// 1. CMS constructs URL: https://your-site.com/api/preview?slug=/about
-// 2. Your preview endpoint enables preview mode
-// 3. Redirects to /about with preview cookie set
-// 4. Page renders dynamically with draft content
+  config --> construct --> enable --> redirect --> render
 ```
 
 ## A Note on Contentstack's Official SSG Guidance
